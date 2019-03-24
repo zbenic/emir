@@ -19,16 +19,19 @@ class Emir:
                          'translate':                '02',
                          'rotate':                   '03',
                          'beep':                     '04',
-                        ('sensorsOff', 'sensorsOn'): '05',
+                         'sensorsOff':               '05',
+                         'sensorsOn':                '05',
                          'setDigitalOutput':         '06',
-                        ('sendInfoOn', 'sendInfoOff', 'sendInfoEEPROM'): '10',
+                         'sendInfoOn':               '10',
+                         'sendInfoOff':              '10',
+                         'sendInfoEEPROM':           '10',
                          'setMinDistance':           '11',
                          'setMaxSpeed':              '12',
                          'setMaxRotation':           '13',
                          'resetAzimuth':             '14',
                          'resetCounters':            '15',
-                         'turnOff':                  'FF'
-                        }
+                         'turnOff':                  'FF'}
+        self.connected = False
 
     def __getRobotAddress(self):
         retryNumber = 0
@@ -69,7 +72,7 @@ class Emir:
         for arg in args:
             argumentSum += arg
 
-        return (self.__getMax8bitIntegerValue() + 1) - argumentSum % (self.__getMax8bitIntegerValue() + 1)
+        return ((self.__getMax8bitIntegerValue() + 1) - argumentSum % (self.__getMax8bitIntegerValue() + 1)) % (self.__getMax8bitIntegerValue() + 1)
 
     @staticmethod
     def __getTwosComplement8bit(decimalBaseInteger: int):
@@ -97,7 +100,7 @@ class Emir:
         else:
             return False
 
-    def __sendCommand(self, commandName: str, firstArg: int = 0, secondArg: int = 0, firstArgLimits: VectorInt = [0, 0], secondArgLimits: VectorInt = [0, 0], useTwosComplement: bool = True):
+    def __sendCommand(self, commandName: str, firstArg: int = 0, secondArg: int = 0, firstArgLimits: VectorInt = [0, 0], secondArgLimits: VectorInt = [0, 0], useTwosComplement: bool = True, useValueClipping: bool = True):
         """
         Generic method for sending commands to the robot.
         Command format is #NNaabbCS/, where:
@@ -114,6 +117,7 @@ class Emir:
         :param firstArgLimits:
         :param secondArgLimits:
         :param useTwosComplement:
+        :param useValueClipping:
         :return:
         """
 
@@ -122,8 +126,9 @@ class Emir:
         commandNumberInt = int(commandNumber, 16)
 
         # value clipping
-        firstArg = self.__clipValue(firstArg, firstArgLimits[0], firstArgLimits[1])
-        secondArg = self.__clipValue(secondArg, secondArgLimits[0], secondArgLimits[1])
+        if useValueClipping:
+            firstArg = self.__clipValue(firstArg, firstArgLimits[0], firstArgLimits[1])
+            secondArg = self.__clipValue(secondArg, secondArgLimits[0], secondArgLimits[1])
 
         # calculate 8 bit two's complement
         if useTwosComplement:
@@ -156,6 +161,11 @@ class Emir:
         if protocol is not None:
             self.sock = bluetooth.BluetoothSocket(protocol)
             self.sock.connect((self.address, self.port))
+            self.connected = self.sock.connected
+            if self.connected:
+                print(self.name + " connected.")
+            else:
+                raise ConnectionError("Could not connect to" + self.name + ".")
         else:
             warnings.warn("Unknown protocol. Only works with RFCOMM or L2CAP protocols.")
 
@@ -289,28 +299,64 @@ class Emir:
 
         firstArgLimits = [0, 255]  # [1/10s]
 
-        duration = self.__clipValue(duration, firstArgLimits[0], firstArgLimits[1])
-
         self.__sendCommand('beep', duration, firstArgLimits=firstArgLimits, useTwosComplement=False)
 
 
     def sendInfoEEPROM(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('sendInfoEEPROM', 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0
 
     def sendInfoOn(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('sendInfoOn', 1, useValueClipping=False)  # 240 is F0
 
     def sendInfoOff(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('sendInfoOff', 0, useValueClipping=False)  # 240 is F0
 
     def sensorsOn(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('sensorsOn', 1, useValueClipping=False)
 
     def sensorsOff(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('sensorsOff', 1, useValueClipping=False)
+
 
     def turnOff(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('turnOff')
+        # self.sock.close()
 
 robot = Emir("Galaxy S6")
 robot.move(33, 0)
@@ -336,5 +382,11 @@ robot.beep(-10)
 robot.beep(0)
 robot.beep(255)
 robot.beep(298)
+robot.sensorsOff()
+robot.sensorsOn()
+robot.sendInfoEEPROM()
+robot.sendInfoOff()
+robot.sendInfoOn()
+robot.turnOff()
 
 robot.connect()
