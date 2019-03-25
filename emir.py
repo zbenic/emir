@@ -1,12 +1,13 @@
 import bluetooth
-from typing import List
 import warnings
+import struct
+import binascii
 warnings.simplefilter('always', UserWarning)
 
-VectorInt = List[int]
+VectorInt = [int]
 
 class Emir:
-    def __init__(self, name):
+    def __init__(self, name, numOfProximitySensors=6):
         self.name = name
         self.address = None
         self.numberOfRetries = 5
@@ -32,6 +33,21 @@ class Emir:
                          'resetCounters':            '15',
                          'turnOff':                  'FF'}
         self.connected = False
+        self.statusString = None  # TODO: is this needed??
+        self.proximitySensors = [None] * numOfProximitySensors
+        self.battery = None
+        self.chargeVoltage = None
+        self.charging = False
+        self.speed = None
+        self.rotation = None
+        self.leftMotorPwm = None
+        self.rightMotorPwm = None
+        self.workMode = None
+        self.digitalIn = None
+        self.azimuth = None
+        self.path = None
+        self.angle = None
+        self.update = False
 
     def __getRobotAddress(self):
         retryNumber = 0
@@ -90,7 +106,7 @@ class Emir:
     def __getMax8bitIntegerValue():
         return 2**8 - 1
 
-    def __commandIsValid(self, *args: int):
+    def __messageIsValid(self, *args: int):
         argumentSum = 0
         for arg in args:
             argumentSum += arg
@@ -145,12 +161,75 @@ class Emir:
 
         # send message if the message is valid (NN+aa+bb+CS=0)
         # raise warning in the case of invalid message
-        if self.__commandIsValid(commandNumberInt, firstArg, secondArg, checkSum):
+        if self.__messageIsValid(commandNumberInt, firstArg, secondArg, checkSum): #and self.connected:
             print("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
-            # self.sock.send("#" + commandNumber + firstArgument_hex + secondArgument_hex + checkSum_hex + "/")
+            # self.sock.send("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
+        elif not self.connected:
+            warnings.warn("Command '" + commandName + "': Robot " + self.name + " no connected!")
         else:
             warnings.warn("Command '" + commandName + "': checksum is not 0!")
 
+    def __parseStatusMessage(self, statusMessage: str):
+        if statusMessage[0] != '*':
+            warnings.warn("Problem occurred with parsing the robot status message. First character is not '*', but " + statusMessage[0] + ".")
+        if statusMessage[-1] != '/':
+            warnings.warn("Problem occurred with parsing the robot status message. Last character is not '/', but " +
+                          statusMessage[-1] + ".")
+
+        # read proximity sensors data (bytes from 1:13) [cm]
+        for sensorIndex in range (0, self.proximitySensors.count()):
+            self.proximitySensors[sensorIndex] = int(statusMessage[(sensorIndex * 2 + 1):(sensorIndex * 2 + 1) + 2], 16)
+
+        # read battery/charging voltage [V]
+        self.battery = int(statusMessage[13:15], 16)
+        # self.chargeVoltage TODO
+
+        # read speed [%] TODO twos complement
+        self.speed =  int(statusMessage[15:17], 16)
+
+        # read rotation [%] TODO twos complement
+        self.rotation =  int(statusMessage[17:19], 16)
+
+        # read left motor PWM [%] TODO twos complement
+        self.leftMotorPwm =  int(statusMessage[19:21], 16)
+
+        # read right motor PWM [%] TODO twos complement
+        self.rightMotorPwm =  int(statusMessage[21:23], 16)
+
+        # read work mode
+        self.workMode =  int(statusMessage[23:25], 16)
+
+        # read digital input state
+        self.digitalIn =  int(statusMessage[25:27], 16)
+
+        # read azimuth [deg]
+        self.azimuth =  int(statusMessage[27:29], 16)
+
+        # read path [cm]
+        self.path =  int(statusMessage[29:31], 16)
+
+        # read angle [deg]
+        self.path =  int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
+
+        # read checksum
+        self.path = int(statusMessage[33:35], 16)
+
+        checksum = int(statusMessage[35:37], 16)
+
+        if not self.__messageIsValid(
+            sum(self.proximitySensors),
+            self.battery,
+            self.speed,
+            self.rotation,
+            self.leftMotorPwm,
+            self.rightMotorPwm,
+            self.workMode,
+            self.digitalIn,
+            self.azimuth,
+            self.path,
+            int(self.angle / 2),
+            checksum):
+            warnings.warn("Message '" + self.statusString + "': checksum is not 0!")
 
     def connect(self):
         self.__getRobotAddress()
@@ -169,8 +248,21 @@ class Emir:
         else:
             warnings.warn("Unknown protocol. Only works with RFCOMM or L2CAP protocols.")
 
+    def getRobotStatusMessage(self):
+        self.statusString = self.sock.recv(64)  #TODO: check if 64bytes is enough
+        if not self.statusString:
+            warnings.warn("Problem occurred while getting robot status message which resulted in empty status message.")
+        else:
+            if self.statusString[0]
+
     def stop(self):
-        raise NotImplementedError
+        """
+
+        :return:
+
+        """
+
+        self.__sendCommand('stop')
 
     def move(self, translationSpeed: int, rotationSpeed: int):
         """
@@ -301,7 +393,6 @@ class Emir:
 
         self.__sendCommand('beep', duration, firstArgLimits=firstArgLimits, useTwosComplement=False)
 
-
     def sendInfoEEPROM(self):
         """
 
@@ -347,7 +438,6 @@ class Emir:
 
         self.__sendCommand('sensorsOff', 1, useValueClipping=False)
 
-
     def turnOff(self):
         """
 
@@ -358,7 +448,7 @@ class Emir:
         self.__sendCommand('turnOff')
         # self.sock.close()
 
-robot = Emir("Galaxy S6")
+robot = Emir("eMIR-Yellow")
 robot.move(33, 0)
 robot.translate(10, 33)
 robot.rotate(10, 33)
@@ -387,6 +477,7 @@ robot.sensorsOn()
 robot.sendInfoEEPROM()
 robot.sendInfoOff()
 robot.sendInfoOn()
+robot.stop()
 robot.turnOff()
 
 robot.connect()
