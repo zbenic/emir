@@ -36,6 +36,7 @@ class Emir:
         self.statusString = None  # TODO: is this needed??
         self.proximitySensors = [None] * numOfProximitySensors
         self.battery = None
+        self.lowBattery = False
         self.chargeVoltage = None
         self.charging = False
         self.speed = None
@@ -169,7 +170,8 @@ class Emir:
         else:
             warnings.warn("Command '" + commandName + "': checksum is not 0!")
 
-    def __parseStatusMessage(self, statusMessage: str):
+    def __parseStatusMessage(self):
+        statusMessage = self.statusString
         if statusMessage[0] != '*':
             warnings.warn("Problem occurred with parsing the robot status message. First character is not '*', but " + statusMessage[0] + ".")
         if statusMessage[-1] != '/':
@@ -181,20 +183,37 @@ class Emir:
             self.proximitySensors[sensorIndex] = int(statusMessage[(sensorIndex * 2 + 1):(sensorIndex * 2 + 1) + 2], 16)
 
         # read battery/charging voltage [V]
-        self.battery = int(statusMessage[13:15], 16)
-        # self.chargeVoltage TODO
+        msb = bool(format(int(statusMessage[13:15], 16), '0>8b')[0])
+        messageBatteryValueBinary = format(int(statusMessage[13:15], 16), '0>8b')[1:]
+        messageBatteryValueInt = int(messageBatteryValueBinary, 2)
+        if msb:  # if MSB is 1
+            if messageBatteryValueInt > 20:
+                self.chargeVoltage = 9 + messageBatteryValueInt / 17
+            else:
+                self.chargeVoltage = None
+            self.charging = False if self.chargeVoltage < 9 else True
+        else:
+            self.battery = 9 + messageBatteryValueInt / 17
+            if self.battery < 11.1:
+                self.lowBattery = True
+            else:
+                self.lowBattery = False
 
-        # read speed [%] TODO twos complement
-        self.speed =  int(statusMessage[15:17], 16)
+        # read speed [%]
+        messageSpeedValueInt = int(statusMessage[15:17], 16)
+        self.speed = messageSpeedValueInt if messageSpeedValueInt < 128 else messageSpeedValueInt - 256
 
-        # read rotation [%] TODO twos complement
-        self.rotation =  int(statusMessage[17:19], 16)
+        # read rotation [%]
+        messageRotationValueInt = int(statusMessage[17:19], 16)
+        self.rotation = messageRotationValueInt if messageRotationValueInt < 128 else messageRotationValueInt - 256
 
-        # read left motor PWM [%] TODO twos complement
-        self.leftMotorPwm =  int(statusMessage[19:21], 16)
+        # read left motor PWM [%]
+        messageLeftMotorPwmValueInt = int(statusMessage[19:21], 16)
+        self.leftMotorPwm = messageLeftMotorPwmValueInt if messageLeftMotorPwmValueInt < 128 else messageLeftMotorPwmValueInt - 256
 
-        # read right motor PWM [%] TODO twos complement
-        self.rightMotorPwm =  int(statusMessage[21:23], 16)
+        # read right motor PWM [%]
+        messageRightMotorPwmValueInt = int(statusMessage[21:23], 16)
+        self.leftMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt < 128 else messageRightMotorPwmValueInt - 256
 
         # read work mode
         self.workMode =  int(statusMessage[23:25], 16)
@@ -203,7 +222,7 @@ class Emir:
         self.digitalIn =  int(statusMessage[25:27], 16)
 
         # read azimuth [deg]
-        self.azimuth =  int(statusMessage[27:29], 16)
+        self.azimuth =  int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
 
         # read path [cm]
         self.path =  int(statusMessage[29:31], 16)
@@ -212,9 +231,7 @@ class Emir:
         self.path =  int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
 
         # read checksum
-        self.path = int(statusMessage[33:35], 16)
-
-        checksum = int(statusMessage[35:37], 16)
+        checksum = int(statusMessage[33:35], 16)
 
         if not self.__messageIsValid(
             sum(self.proximitySensors),
@@ -252,8 +269,10 @@ class Emir:
         self.statusString = self.sock.recv(64)  #TODO: check if 64bytes is enough
         if not self.statusString:
             warnings.warn("Problem occurred while getting robot status message which resulted in empty status message.")
+            self.update = False
         else:
-            if self.statusString[0]
+            self.__parseStatusMessage()
+            self.update = True
 
     def stop(self):
         """
