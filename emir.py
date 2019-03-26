@@ -1,7 +1,6 @@
 import bluetooth
 import warnings
-import struct
-import binascii
+import time
 warnings.simplefilter('always', UserWarning)
 
 VectorInt = [int]
@@ -49,6 +48,9 @@ class Emir:
         self.path = None
         self.angle = None
         self.update = False
+        self.setSpeed = None
+        self.SetRotation = None
+        self.badCheckSum = 0
 
     def __getRobotAddress(self):
         retryNumber = 0
@@ -115,7 +117,9 @@ class Emir:
         if argumentSum % (self.__getMax8bitIntegerValue() + 1) == 0:
             return True
         else:
+            self.badCheckSum += 1
             return False
+
 
     def __sendCommand(self, commandName: str, firstArg: int = 0, secondArg: int = 0, firstArgLimits: VectorInt = [0, 0], secondArgLimits: VectorInt = [0, 0], useTwosComplement: bool = True, useValueClipping: bool = True):
         """
@@ -179,7 +183,7 @@ class Emir:
                           statusMessage[-1] + ".")
 
         # read proximity sensors data (bytes from 1:13) [cm]
-        for sensorIndex in range (0, self.proximitySensors.count()):
+        for sensorIndex in range(0, len(self.proximitySensors)):
             self.proximitySensors[sensorIndex] = int(statusMessage[(sensorIndex * 2 + 1):(sensorIndex * 2 + 1) + 2], 16)
 
         # read battery/charging voltage [V]
@@ -188,12 +192,12 @@ class Emir:
         messageBatteryValueInt = int(messageBatteryValueBinary, 2)
         if msb:  # if MSB is 1
             if messageBatteryValueInt > 20:
-                self.chargeVoltage = 9 + messageBatteryValueInt / 17
+                self.chargeVoltage = int(9 + messageBatteryValueInt / 17)
             else:
-                self.chargeVoltage = None
+                self.chargeVoltage = 0
             self.charging = False if self.chargeVoltage < 9 else True
         else:
-            self.battery = 9 + messageBatteryValueInt / 17
+            self.battery = int(9 + messageBatteryValueInt / 17)
             if self.battery < 11.1:
                 self.lowBattery = True
             else:
@@ -225,10 +229,14 @@ class Emir:
         self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
 
         # read path [cm]
-        self.path = int(statusMessage[29:31], 16)
+        # self.path = int(statusMessage[29:31], 16)
+        messagePathValueInt = int(statusMessage[29:31], 16)
+        self.path = int(messagePathValueInt * 1.03) if messagePathValueInt < 128 else int((messagePathValueInt - 256) * 1.03)  # TODO: check the validity of this calculation
 
         # read angle [deg]
-        self.angle = int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
+        # self.angle = int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
+        messageAngleValueInt = int(statusMessage[29:31], 16)
+        self.angle = int(messageAngleValueInt * 2.14) if messageAngleValueInt < 128 else int((messageAngleValueInt - 256) * 2.14)  # TODO: check the validity of this calculation
 
         # read checksum
         checksum = int(statusMessage[33:35], 16)
@@ -246,7 +254,7 @@ class Emir:
             self.path,
             int(self.angle / 2),
             checksum):
-            warnings.warn("Message '" + self.statusString + "': checksum is not 0!")
+                warnings.warn("Message '" + self.statusString + "': checksum is not 0!")
 
     def connect(self):
         self.__getRobotAddress()
@@ -467,36 +475,54 @@ class Emir:
         self.__sendCommand('turnOff')
         # self.sock.close()
 
-robot = Emir("eMIR-Yellow")
-robot.move(33, 0)
-robot.translate(10, 33)
-robot.rotate(10, 33)
-robot.setMinDistance(33)
-robot.setMaxSpeed(33)
-robot.setMaxRotation(33)
-robot.resetAzimuth()
-robot.resetCounters()
-robot.setDigitalOutput(0, 0)
-robot.setDigitalOutput(0, 1)
-robot.setDigitalOutput(1, 0)
-robot.setDigitalOutput(1, 1)
-robot.setDigitalOutput(2, 0)
-robot.setDigitalOutput(2, 1)
-robot.setDigitalOutput(3, 0)
-robot.setDigitalOutput(3, 1)
-robot.setDigitalOutput(4, 0)
-robot.setDigitalOutput(4, 10)
-robot.setDigitalOutput(4, 15)
-robot.beep(-10)
-robot.beep(0)
-robot.beep(255)
-robot.beep(298)
-robot.sensorsOff()
-robot.sensorsOn()
-robot.sendInfoEEPROM()
-robot.sendInfoOff()
-robot.sendInfoOn()
-robot.stop()
-robot.turnOff()
 
+robot = Emir("eMIR-Yellow")
 robot.connect()
+
+if robot.connected:
+    print(robot.name + " is connected!")
+else:
+    print(robot.name + " is not connected!")
+    exit(-1)
+
+for counter in range(0, 100):
+    robot.move(33, 0)
+    time.sleep(0.1)
+    robot.getRobotStatusMessage()
+    print("sensor0:" + str(robot.proximitySensors[0]))
+    print("battery:" + str(robot.battery))
+    print("speed:" + str(robot.speed))
+    print("leftMotorPWM:" + str(robot.leftMotorPwm))
+    print("rightMotorPWM:" + str(robot.rightMotorPwm))
+
+# robot.translate(10, 33)
+# robot.rotate(10, 33)
+# robot.setMinDistance(33)
+# robot.setMaxSpeed(33)
+# robot.setMaxRotation(33)
+# robot.resetAzimuth()
+# robot.resetCounters()
+# robot.setDigitalOutput(0, 0)
+# robot.setDigitalOutput(0, 1)
+# robot.setDigitalOutput(1, 0)
+# robot.setDigitalOutput(1, 1)
+# robot.setDigitalOutput(2, 0)
+# robot.setDigitalOutput(2, 1)
+# robot.setDigitalOutput(3, 0)
+# robot.setDigitalOutput(3, 1)
+# robot.setDigitalOutput(4, 0)
+# robot.setDigitalOutput(4, 10)
+# robot.setDigitalOutput(4, 15)
+# robot.beep(-10)
+# robot.beep(0)
+# robot.beep(255)
+# robot.beep(298)
+# robot.sensorsOff()
+# robot.sensorsOn()
+# robot.sendInfoEEPROM()
+# robot.sendInfoOff()
+# robot.sendInfoOn()
+# robot.stop()
+# robot.turnOff()
+#
+# robot.connect()
