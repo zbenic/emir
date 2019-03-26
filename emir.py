@@ -216,19 +216,19 @@ class Emir:
         self.leftMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt < 128 else messageRightMotorPwmValueInt - 256
 
         # read work mode
-        self.workMode =  int(statusMessage[23:25], 16)
+        self.workMode = int(statusMessage[23:25], 16)
 
         # read digital input state
-        self.digitalIn =  int(statusMessage[25:27], 16)
+        self.digitalIn = int(statusMessage[25:27], 16)
 
         # read azimuth [deg]
-        self.azimuth =  int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
 
         # read path [cm]
-        self.path =  int(statusMessage[29:31], 16)
+        self.path = int(statusMessage[29:31], 16)
 
         # read angle [deg]
-        self.path =  int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
+        self.angle = int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
 
         # read checksum
         checksum = int(statusMessage[33:35], 16)
