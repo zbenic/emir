@@ -1,6 +1,7 @@
 import bluetooth
 import warnings
 import time
+from collections import Iterable
 warnings.simplefilter('always', UserWarning)
 
 VectorInt = [int]
@@ -32,11 +33,11 @@ class Emir:
                          'resetCounters':            '15',
                          'turnOff':                  'FF'}
         self.connected = False
-        self.statusString = None  # TODO: is this needed??
-        self.proximitySensors = [None] * numOfProximitySensors
-        self.battery = None
+        self.statusMessage = None
+        self.proximitySensors = [0] * numOfProximitySensors
+        self.battery = 0
         self.lowBattery = False
-        self.chargeVoltage = None
+        self.chargeVoltage = 0
         self.charging = False
         self.speed = None
         self.rotation = None
@@ -48,8 +49,8 @@ class Emir:
         self.path = None
         self.angle = None
         self.update = False
-        self.setSpeed = None
-        self.SetRotation = None
+        self.setSpeed = 0
+        self.SetRotation = 0
         self.badCheckSum = 0
 
     def __getRobotAddress(self):
@@ -65,26 +66,15 @@ class Emir:
                 warnings.warn("Trial " + str(retryNumber) + ". Could not find " + self.name + " among nearby bluetooth devices.")
                 retryNumber += 1
 
-    def __getRobotService(self):
-        self.service = bluetooth.find_service(address=self.address)
-
     def __getRobotPort(self):
-        if self.service[0] is not None:
-            self.port = self.service[0]["port"]  # TODO: check what services eMIR has
+        if self.name == "eMIR-Yellow":
+            self.port = 27
+        elif self.name == "eMIR-Blue":
+            self.port = 34
+        elif self.name == "eMIR-Red":
+            self.port = 1  # TODO: documentation says port num is 50
         else:
-            warnings.warn("No service could be found for device " + self.name + ".")
-
-    def __getRobotProtocol(self):
-        if self.service[0] is not None:
-            self.protocol = self.service[0]["protocol"]  # TODO: check what services eMIR has
-            if self.protocol == "RFCOMM":
-                return bluetooth.RFCOMM
-            elif self.protocol == "L2CAP":
-                return bluetooth.L2CAP
-            else:
-                return None
-        else:
-            warnings.warn("No service could be found for device " + self.name + ".")
+            self.port = None
 
     def __getCheckSum(self, *args: int):
         argumentSum = 0
@@ -109,10 +99,19 @@ class Emir:
     def __getMax8bitIntegerValue():
         return 2**8 - 1
 
-    def __messageIsValid(self, *args: int):
-        argumentSum = 0
-        for arg in args:
-            argumentSum += arg
+    @staticmethod
+    def __stringOfHexToListOfDecIntegers(string: str):
+        groupSize = 2  # 2 strings in each group
+        listOfHexStrings = [string[i:i + groupSize] for i in range(0, len(string), groupSize)]
+        listOfDecimalIntegers = [int(hexStr, 16) for hexStr in listOfHexStrings]
+
+        return listOfDecimalIntegers
+
+    def __messageIsValid(self, *args):
+        if isinstance(args, Iterable):
+            argumentSum = sum(args[0])
+        else:
+            argumentSum = sum(args)
 
         if argumentSum % (self.__getMax8bitIntegerValue() + 1) == 0:
             return True
@@ -120,8 +119,15 @@ class Emir:
             self.badCheckSum += 1
             return False
 
-
-    def __sendCommand(self, commandName: str, firstArg: int = 0, secondArg: int = 0, firstArgLimits: VectorInt = [0, 0], secondArgLimits: VectorInt = [0, 0], useTwosComplement: bool = True, useValueClipping: bool = True):
+    def __sendCommand(self,
+                      commandName: str,
+                      firstArg: int = 0,
+                      secondArg: int = 0,
+                      firstArgLimits: VectorInt = [0, 0],
+                      secondArgLimits: VectorInt = [0, 0],
+                      useTwosComplement: bool = True,
+                      useValueClipping: bool = True,
+                      verbose: bool = True):
         """
         Generic method for sending commands to the robot.
         Command format is #NNaabbCS/, where:
@@ -139,6 +145,7 @@ class Emir:
         :param secondArgLimits:
         :param useTwosComplement:
         :param useValueClipping:
+        :param verbose:
         :return:
         """
 
@@ -166,21 +173,26 @@ class Emir:
 
         # send message if the message is valid (NN+aa+bb+CS=0)
         # raise warning in the case of invalid message
-        if self.__messageIsValid(commandNumberInt, firstArg, secondArg, checkSum): #and self.connected:
-            print("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
-            # self.sock.send("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
+        if self.__messageIsValid(commandNumberInt, firstArg, secondArg, checkSum):
+            if verbose:
+                print("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")  # for debugging
+            self.sock.send("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
         elif not self.connected:
             warnings.warn("Command '" + commandName + "': Robot " + self.name + " no connected!")
         else:
             warnings.warn("Command '" + commandName + "': checksum is not 0!")
 
     def __parseStatusMessage(self):
-        statusMessage = self.statusString
+        statusMessage = self.statusMessage.decode('utf-8')
         if statusMessage[0] != '*':
             warnings.warn("Problem occurred with parsing the robot status message. First character is not '*', but " + statusMessage[0] + ".")
         if statusMessage[-1] != '/':
-            warnings.warn("Problem occurred with parsing the robot status message. Last character is not '/', but " +
-                          statusMessage[-1] + ".")
+            warnings.warn("Problem occurred with parsing the robot status message. Last character is not '/', but " + statusMessage[-1] + ".")
+
+        statusMessageParts = self.__stringOfHexToListOfDecIntegers(statusMessage[1:-1])
+
+        if not self.__messageIsValid(statusMessageParts):
+            warnings.warn("Message '" + statusMessage + "' invalid: checksum is not 0!")
 
         # read proximity sensors data (bytes from 1:13) [cm]
         for sensorIndex in range(0, len(self.proximitySensors)):
@@ -229,54 +241,33 @@ class Emir:
         self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
 
         # read path [cm]
-        # self.path = int(statusMessage[29:31], 16)
         messagePathValueInt = int(statusMessage[29:31], 16)
-        self.path = int(messagePathValueInt * 1.03) if messagePathValueInt < 128 else int((messagePathValueInt - 256) * 1.03)  # TODO: check the validity of this calculation
+        self.path = int(messagePathValueInt * 1.03) if messagePathValueInt < 128 else int((messagePathValueInt - 256) * 1.03)
 
         # read angle [deg]
-        # self.angle = int(statusMessage[31:33], 16) * 2  # the value from the message is showing deg/2 value
-        messageAngleValueInt = int(statusMessage[29:31], 16)
-        self.angle = int(messageAngleValueInt * 2.14) if messageAngleValueInt < 128 else int((messageAngleValueInt - 256) * 2.14)  # TODO: check the validity of this calculation
-
-        # read checksum
-        checksum = int(statusMessage[33:35], 16)
-
-        if not self.__messageIsValid(
-            sum(self.proximitySensors),
-            self.battery,
-            self.speed,
-            self.rotation,
-            self.leftMotorPwm,
-            self.rightMotorPwm,
-            self.workMode,
-            self.digitalIn,
-            self.azimuth,
-            self.path,
-            int(self.angle / 2),
-            checksum):
-                warnings.warn("Message '" + self.statusString + "': checksum is not 0!")
+        messageAngleValueInt = int(statusMessage[31:33], 16)
+        self.angle = int(messageAngleValueInt * 2.14) if messageAngleValueInt < 128 else int((messageAngleValueInt - 256) * 2.14)
 
     def connect(self):
         self.__getRobotAddress()
-        self.__getRobotService()
         self.__getRobotPort()
-        protocol = self.__getRobotProtocol()
 
-        if protocol is not None:
-            self.sock = bluetooth.BluetoothSocket(protocol)
+        try:
+            self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
             self.sock.connect((self.address, self.port))
-            self.connected = self.sock.connected
-            if self.connected:
-                print(self.name + " connected.")
-            else:
-                raise ConnectionError("Could not connect to" + self.name + ".")
-        else:
-            warnings.warn("Unknown protocol. Only works with RFCOMM or L2CAP protocols.")
+            print(self.name + " is connected.")
+        except bluetooth.BluetoothError as error:
+            self.sock.close()
+            warnings.warn("Could not connect:", error)
+            exit(-1)
 
-    def getRobotStatusMessage(self):
-        self.statusString = self.sock.recv(64)  #TODO: check if 64bytes is enough
-        if not self.statusString:
-            warnings.warn("Problem occurred while getting robot status message which resulted in empty status message.")
+    def getRobotStatus(self):
+        # self.statusString = self.sock.recv(128)  #TODO: check if 64bytes is enough
+        messageStart = self.statusMessage.find(b'*')
+        messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
+        self.statusMessage = self.statusMessage[messageStart:messageEnd]
+        if not self.statusMessage:
+            warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")
             self.update = False
         else:
             self.__parseStatusMessage()
@@ -473,27 +464,23 @@ class Emir:
         """
 
         self.__sendCommand('turnOff')
-        # self.sock.close()
+        self.sock.close()
 
 
-robot = Emir("eMIR-Yellow")
+robot = Emir("eMIR-Red")
+robot.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
+robot.getRobotStatus()
 robot.connect()
 
-if robot.connected:
-    print(robot.name + " is connected!")
-else:
-    print(robot.name + " is not connected!")
-    exit(-1)
-
-for counter in range(0, 100):
-    robot.move(33, 0)
+for counter in range(0, 10):
+    robot.move(20, 0)
     time.sleep(0.1)
-    robot.getRobotStatusMessage()
-    print("sensor0:" + str(robot.proximitySensors[0]))
-    print("battery:" + str(robot.battery))
-    print("speed:" + str(robot.speed))
-    print("leftMotorPWM:" + str(robot.leftMotorPwm))
-    print("rightMotorPWM:" + str(robot.rightMotorPwm))
+    robot.getRobotStatus()
+    # print("sensor0:" + str(robot.proximitySensors[0]))
+    # print("battery:" + str(robot.battery))
+    # print("speed:" + str(robot.speed))
+    # print("leftMotorPWM:" + str(robot.leftMotorPwm))
+    # print("rightMotorPWM:" + str(robot.rightMotorPwm))
 
 # robot.translate(10, 33)
 # robot.rotate(10, 33)
