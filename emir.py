@@ -183,7 +183,7 @@ class Emir:
         :return: Information if the message is valid
         """
 
-        if isinstance(args, Iterable):
+        if type(args[0]) is list:
             argumentSum = sum(args[0])
         else:
             argumentSum = sum(args)
@@ -202,7 +202,7 @@ class Emir:
                       secondArgLimits: VectorInt = [0, 0],
                       useTwosComplement: bool = True,
                       useValueClipping: bool = True,
-                      verbose: bool = True):
+                      verbose: bool = False):
         """
         Private method.
         Generic method for sending commands to the robot.
@@ -576,3 +576,25 @@ class Emir:
 
         self.__sendCommand('turnOff')
         self.sock.close()
+
+    def printStatusMessageValues(self):
+        """
+        Prints out values contained in the status message.
+
+        :return: N/A
+        """
+
+        for sensorIdx in range(6):
+            print(self.name + " sensor " + str(sensorIdx) + ":" + str(self.proximitySensors[sensorIdx]))
+
+        print(self.name + " battery voltage:" + str(self.battery))
+        print(self.name + " charging voltage:" + str(self.chargeVoltage))
+        print(self.name + " translation speed:" + str(self.speed))
+        print(self.name + " rotation speed:" + str(self.rotation))
+        print(self.name + " left motor PWM:" + str(self.leftMotorPwm))
+        print(self.name + " right motor PWM:" + str(self.rightMotorPwm))
+        print(self.name + " work mode:" + str(self.workMode))
+        print(self.name + " digital input:" + str(self.digitalIn))
+        print(self.name + " azimuth:" + str(self.azimuth))
+        print(self.name + " path:" + str(self.path))
+        print(self.name + " angle:" + str(self.angle))
