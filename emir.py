@@ -1,7 +1,8 @@
-import bluetooth
+# import bluetooth
 import warnings
 import time
 from collections import Iterable
+from sys import stdout
 warnings.simplefilter('always', UserWarning)
 
 VectorInt = [int]
@@ -46,7 +47,6 @@ class Emir:
                          'resetAzimuth':             '14',
                          'resetCounters':            '15',
                          'turnOff':                  'FF'}
-        self.connected = False
         self.statusMessage = None
         self.proximitySensors = [0] * numOfProximitySensors
         self.battery = 0
@@ -99,7 +99,7 @@ class Emir:
         if self.name == "eMIR-Yellow":
             self.port = 27
         elif self.name == "eMIR-Blue":
-            self.port = 34
+            self.port = 1  # TODO: documentation says port num is 34
         elif self.name == "eMIR-Red":
             self.port = 1  # TODO: documentation says port num is 50
         else:
@@ -255,8 +255,6 @@ class Emir:
             if verbose:
                 print("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")  # for debugging
             self.sock.send("#" + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + "/")
-        elif not self.connected:
-            warnings.warn("Command '" + commandName + "': Robot " + self.name + " no connected!")
         else:
             warnings.warn("Command '" + commandName + "': checksum is not 0!")
 
@@ -377,8 +375,8 @@ class Emir:
 
         :return: N/A
         """
-        self.statusMessage = None
-        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        # self.statusMessage = None
+        # self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
         messageStart = self.statusMessage.find(b'*')
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
@@ -582,49 +580,84 @@ class Emir:
         self.sock.close()
 
 
-robot = Emir("eMIR-Red")
-robot.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
-robot.getRobotStatus()
-robot.connect()
+red = Emir("eMIR-Red")
+blue = Emir("eMIR-Blue")
+# robot.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
+# robot.getRobotStatus()
+red.connect()
+blue.connect()
 
-for counter in range(0, 10):
-    robot.move(20, 0)
+robotDict = {0: red,
+             1: blue}
+
+for counter in range(0, 1000):
+    red.setMaxSpeed(40)
+    blue.setMaxSpeed(20)
     time.sleep(0.1)
-    robot.getRobotStatus()
-    # print("sensor0:" + str(robot.proximitySensors[0]))
-    # print("battery:" + str(robot.battery))
-    # print("speed:" + str(robot.speed))
-    # print("leftMotorPWM:" + str(robot.leftMotorPwm))
-    # print("rightMotorPWM:" + str(robot.rightMotorPwm))
 
-# robot.translate(10, 33)
-# robot.rotate(10, 33)
-# robot.setMinDistance(33)
-# robot.setMaxSpeed(33)
-# robot.setMaxRotation(33)
-# robot.resetAzimuth()
-# robot.resetCounters()
-# robot.setDigitalOutput(0, 0)
-# robot.setDigitalOutput(0, 1)
-# robot.setDigitalOutput(1, 0)
-# robot.setDigitalOutput(1, 1)
-# robot.setDigitalOutput(2, 0)
-# robot.setDigitalOutput(2, 1)
-# robot.setDigitalOutput(3, 0)
-# robot.setDigitalOutput(3, 1)
-# robot.setDigitalOutput(4, 0)
-# robot.setDigitalOutput(4, 10)
-# robot.setDigitalOutput(4, 15)
-# robot.beep(-10)
-# robot.beep(0)
-# robot.beep(255)
-# robot.beep(298)
-# robot.sensorsOff()
-# robot.sensorsOn()
-# robot.sendInfoEEPROM()
-# robot.sendInfoOff()
-# robot.sendInfoOn()
-# robot.stop()
-# robot.turnOff()
-#
-# robot.connect()
+    red.setMaxRotation(70)
+    blue.setMaxRotation(50)
+    time.sleep(0.1)
+
+    red.translate(10, 100)
+    blue.translate(10, 80)
+    time.sleep(0.1)
+
+    red.rotate(180, 50)
+    blue.translate(-180, 80)
+    time.sleep(0.1)
+
+    red.rotate(180, 50)
+    blue.translate(-180, 80)
+    time.sleep(0.1)
+
+    if counter == 5:
+        red.beep(1)
+        time.sleep(1.5)
+        blue.beep(1)
+        time.sleep(0.1)
+
+    red.setMinDistance(20)
+    blue.setMinDistance(40)
+    time.sleep(0.1)
+
+    red.sendInfoOn()
+    blue.sendInfoOn()
+
+    red.move(50, 60)
+    blue.move(30, 60)
+
+    time.sleep(0.1)
+
+    if counter == 500:
+        print("Azimuth and counters are reset!\n")
+        red.resetAzimuth()
+        blue.resetAzimuth()
+        red.resetCounters()
+        blue.resetCounters()
+
+    red.getRobotStatus()
+    blue.getRobotStatus()
+
+    time.sleep(0.1)
+
+    for robotIdx in range(0,2):
+        robot = robotDict[robotIdx]
+        for sensorIdx in range(0, 6):
+            print(robot.name + " sensor " + str(sensorIdx) + ":" + str(robot.proximitySensors[sensorIdx]), end='\r', flush=True)
+
+        print(robot.name + " battery voltage:" + str(robot.battery), end='\r', flush=True)
+        print(robot.name + " charging voltage:" + str(robot.chargeVoltage), end='\r', flush=True)
+        print(robot.name + " translation speed:" + str(robot.speed), end='\r', flush=True)
+        print(robot.name + " rotation speed:" + str(robot.rotation), end='\r', flush=True)
+        print(robot.name + " left motor PWM:" + str(robot.leftMotorPwm), end='\r', flush=True)
+        print(robot.name + " right motor PWM:" + str(robot.rightMotorPwm), end='\r', flush=True)
+        print(robot.name + " work mode:" + str(robot.workMode), end='\r', flush=True)
+        print(robot.name + " digital input:" + str(robot.digitalIn), end='\r', flush=True)
+        print(robot.name + " azimuth:" + str(robot.azimuth), end='\r', flush=True)
+        print(robot.name + " path:" + str(robot.path), end='\r', flush=True)
+        print(robot.name + " angle:" + str(robot.angle), end='\r', flush=True)
+    stdout.write("\n")
+
+red.stop()
+blue.stop()
