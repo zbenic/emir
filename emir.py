@@ -584,7 +584,7 @@ class Emir:
         :return: N/A
         """
 
-        for sensorIdx in range(6):
+        for sensorIdx in range(len(self.proximitySensors)):
             print(self.name + " sensor " + str(sensorIdx) + ":" + str(self.proximitySensors[sensorIdx]))
 
         print(self.name + " battery voltage:" + str(self.battery))
