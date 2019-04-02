@@ -1,8 +1,6 @@
-# import bluetooth
+import bluetooth
 import warnings
-import time
 from collections import Iterable
-from sys import stdout
 warnings.simplefilter('always', UserWarning)
 
 VectorInt = [int]
@@ -313,7 +311,7 @@ class Emir:
 
         # read right motor PWM [%]
         messageRightMotorPwmValueInt = int(statusMessage[21:23], 16)
-        self.leftMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt < 128 else messageRightMotorPwmValueInt - 256
+        self.rightMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt < 128 else messageRightMotorPwmValueInt - 256
 
         # read work mode
         self.workMode = int(statusMessage[23:25], 16)
@@ -375,8 +373,8 @@ class Emir:
 
         :return: N/A
         """
-        # self.statusMessage = None
-        # self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        self.statusMessage = None  # TODO: comment this and the next line when testing offline
+        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
         messageStart = self.statusMessage.find(b'*')
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
@@ -578,86 +576,3 @@ class Emir:
 
         self.__sendCommand('turnOff')
         self.sock.close()
-
-
-red = Emir("eMIR-Red")
-blue = Emir("eMIR-Blue")
-# robot.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
-# robot.getRobotStatus()
-red.connect()
-blue.connect()
-
-robotDict = {0: red,
-             1: blue}
-
-for counter in range(0, 1000):
-    red.setMaxSpeed(40)
-    blue.setMaxSpeed(20)
-    time.sleep(0.1)
-
-    red.setMaxRotation(70)
-    blue.setMaxRotation(50)
-    time.sleep(0.1)
-
-    red.translate(10, 100)
-    blue.translate(10, 80)
-    time.sleep(0.1)
-
-    red.rotate(180, 50)
-    blue.translate(-180, 80)
-    time.sleep(0.1)
-
-    red.rotate(180, 50)
-    blue.translate(-180, 80)
-    time.sleep(0.1)
-
-    if counter == 5:
-        red.beep(1)
-        time.sleep(1.5)
-        blue.beep(1)
-        time.sleep(0.1)
-
-    red.setMinDistance(20)
-    blue.setMinDistance(40)
-    time.sleep(0.1)
-
-    red.sendInfoOn()
-    blue.sendInfoOn()
-
-    red.move(50, 60)
-    blue.move(30, 60)
-
-    time.sleep(0.1)
-
-    if counter == 500:
-        print("Azimuth and counters are reset!\n")
-        red.resetAzimuth()
-        blue.resetAzimuth()
-        red.resetCounters()
-        blue.resetCounters()
-
-    red.getRobotStatus()
-    blue.getRobotStatus()
-
-    time.sleep(0.1)
-
-    for robotIdx in range(0,2):
-        robot = robotDict[robotIdx]
-        for sensorIdx in range(0, 6):
-            print(robot.name + " sensor " + str(sensorIdx) + ":" + str(robot.proximitySensors[sensorIdx]), end='\r', flush=True)
-
-        print(robot.name + " battery voltage:" + str(robot.battery), end='\r', flush=True)
-        print(robot.name + " charging voltage:" + str(robot.chargeVoltage), end='\r', flush=True)
-        print(robot.name + " translation speed:" + str(robot.speed), end='\r', flush=True)
-        print(robot.name + " rotation speed:" + str(robot.rotation), end='\r', flush=True)
-        print(robot.name + " left motor PWM:" + str(robot.leftMotorPwm), end='\r', flush=True)
-        print(robot.name + " right motor PWM:" + str(robot.rightMotorPwm), end='\r', flush=True)
-        print(robot.name + " work mode:" + str(robot.workMode), end='\r', flush=True)
-        print(robot.name + " digital input:" + str(robot.digitalIn), end='\r', flush=True)
-        print(robot.name + " azimuth:" + str(robot.azimuth), end='\r', flush=True)
-        print(robot.name + " path:" + str(robot.path), end='\r', flush=True)
-        print(robot.name + " angle:" + str(robot.angle), end='\r', flush=True)
-    stdout.write("\n")
-
-red.stop()
-blue.stop()
