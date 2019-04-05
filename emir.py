@@ -1,6 +1,8 @@
 import bluetooth
+from threading import Thread
+import time
 import warnings
-from collections import Iterable
+
 warnings.simplefilter('always', UserWarning)
 
 VectorInt = [int]
@@ -64,6 +66,7 @@ class Emir:
         self.setSpeed = 0
         self.SetRotation = 0
         self.badCheckSum = 0
+        self.statusWorker = None
 
     def __getRobotAddress(self):
         """
@@ -95,7 +98,7 @@ class Emir:
         """
 
         if self.name == "eMIR-Yellow":
-            self.port = 27
+            self.port = 1  # TODO: documentation says port num is 27
         elif self.name == "eMIR-Blue":
             self.port = 1  # TODO: documentation says port num is 34
         elif self.name == "eMIR-Red":
@@ -379,11 +382,19 @@ class Emir:
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")
+            # warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")  # For debugging purposes
             self.update = False
         else:
             self.__parseStatusMessage()
             self.update = True
+
+    def startReceivingRobotStatus(self, printMessages: bool = False):
+        self.sendInfoOn()
+        time.sleep(0.2)
+
+        self.statusWorker = StatusMessageWorker(self, printMessages)
+        self.statusWorker.daemon = True
+        self.statusWorker.start()
 
     def stop(self):
         """
@@ -576,6 +587,7 @@ class Emir:
 
         self.__sendCommand('turnOff')
         self.sock.close()
+        # TODO: do thread cleanup
 
     def printStatusMessageValues(self):
         """
@@ -598,3 +610,20 @@ class Emir:
         print(self.name + " azimuth:" + str(self.azimuth))
         print(self.name + " path:" + str(self.path))
         print(self.name + " angle:" + str(self.angle))
+
+
+class StatusMessageWorker(Thread):
+    def __init__(self, robot: Emir, printMessages: bool):
+        Thread.__init__(self)
+        self.robot = robot
+        self.printMessages = printMessages
+
+    def run(self):
+        while True:
+            try:
+                self.robot.getRobotStatus()
+                if self.printMessages:
+                    self.robot.printStatusMessageValues()
+                time.sleep(0.2)  # Refresh rate is ~5 Hz
+            except:
+                print("Error occurred when getting robot status message!")

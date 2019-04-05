@@ -1,27 +1,15 @@
 import emir
 import time
 import tkinter
-from threading import Thread
 
 offline = False
-
-
-class StatusMessageWorker(Thread):
-    def __init__(self, robot: emir.Emir):
-        Thread.__init__(self)
-        self.robot = robot
-
-    def run(self):
-        while True:
-            try:
-                self.robot.getRobotStatus()
-                self.robot.printStatusMessageValues()
-            finally:
-                self.robot.update = False
 
 def main():
     red = emir.Emir("eMIR-Red")
     blue = emir.Emir("eMIR-Blue")
+
+    delay = 0.25
+
     if offline:
         red.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
         blue.statusMessage = b'30000000000F00019C123/*505050505050800000000000F00019C1D6/*505050505050330000000000F00019C123/*505050505050800000000000F00019C'
@@ -30,17 +18,11 @@ def main():
     else:
         red.connect()
         # blue.connect()
-        redWorker = StatusMessageWorker(red)
-        # blueWorker = StatusMessageWorker(blue)
-        redWorker.daemon = True
-        # blueWorker.daemon = True
-        redWorker.start()
-        # blueWorker.start()
+        red.startReceivingRobotStatus(True)
+
 
     robotDict = {0: red,
                  1: blue}
-
-    delay = 0.25
 
     if not offline:
         red.setMaxSpeed(40)
@@ -83,7 +65,7 @@ def main():
             #     blue.beep(1)
             #     time.sleep(0.1)
 
-            red.move(-50, 0)
+            red.move(50, 0)
             # blue.move(30, 60)
             time.sleep(delay)
 
@@ -95,11 +77,6 @@ def main():
                 red.resetCounters()
                 # blue.resetCounters()
                 time.sleep(delay)
-
-            red.getRobotStatus()
-            # blue.getRobotStatus()
-
-            time.sleep(0.25)
 
             # for robotIdx in range(0, 1):
             #     robot = robotDict[robotIdx]
