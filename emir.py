@@ -1,5 +1,5 @@
 import bluetooth
-from threading import Thread
+import threading
 import time
 import warnings
 
@@ -389,12 +389,32 @@ class Emir:
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
+        """
+        Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        :param printMessages: True if internal status values are to be printed in console, false otherwise
+        :return: N/A
+        """
+
         self.sendInfoOn()
         time.sleep(0.2)
 
         self.statusWorker = StatusMessageWorker(self, printMessages)
         self.statusWorker.daemon = True
         self.statusWorker.start()
+
+    def stopReceivingRobotStatus(self):
+        """
+        Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        :return: N/A
+        """
+
+        self.sendInfoOff()
+        time.sleep(0.2)
+
+        self.statusWorker.stop()
+        self.statusWorker.join()
 
     def stop(self):
         """
@@ -612,14 +632,24 @@ class Emir:
         print(self.name + " angle:" + str(self.angle))
 
 
-class StatusMessageWorker(Thread):
+class StatusMessageWorker(threading.Thread):
     def __init__(self, robot: Emir, printMessages: bool):
-        Thread.__init__(self)
+        threading.Thread.__init__(self)
         self.robot = robot
         self.printMessages = printMessages
+        self.stop = threading.Event()
+
+    def stop(self):
+        self.stop.set()
+
+    def stopped(self):
+        return self.stop.isSet()
 
     def run(self):
         while True:
+            if self.stopped():
+                print("Thread closed.")
+                return
             try:
                 self.robot.getRobotStatus()
                 if self.printMessages:
