@@ -17,10 +17,11 @@ class Emir:
 
     def __init__(self, name: str, numOfProximitySensors: int=6):
         """
-        Init method (can be looked at as a constructor).
+        Constructor
 
-        :param name: Name of the robot instance
-        :param numOfProximitySensors: Number of the proximity sensors (default is 6)
+        Args:
+            name: Name of the robot instance
+            numOfProximitySensors: Number of the proximity sensors (default is 6)
         """
 
         self.name = name
@@ -74,7 +75,8 @@ class Emir:
         Retrieves the bluetooth address from the robot whose bluetooth device is the same name as the self.name.
         The address is saved in the self.address.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         retryNumber = 0
@@ -94,7 +96,8 @@ class Emir:
         Private method.
         Updates self.port variable with one of the three eMIR robot port numbers, depending on the instance name.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         if self.name == "eMIR-Yellow":
@@ -111,8 +114,11 @@ class Emir:
         Private method.
         Returns sum(args) mod 2^8+1 (max. 8bit number + 1).
 
-        :param args: Variable number of integer arguments
-        :return: Checksum
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Checksum
         """
 
         argumentSum = 0
@@ -127,8 +133,11 @@ class Emir:
         Static method.
         Returns 8bit two's complement.
 
-        :param decimalBaseInteger: Integer number in decimal base
-        :return: 8bit two's complement
+        Args:
+            decimalBaseInteger: Integer number in decimal base
+
+        Returns
+            8 bit two's complement
         """
 
         if (decimalBaseInteger.bit_length() > 8) or (-128 > decimalBaseInteger or decimalBaseInteger > 127):
@@ -143,10 +152,13 @@ class Emir:
         Static method.
         Returns value clipped by the min and max limits
 
-        :param value: Input value
-        :param minValue: Lower clipping bound
-        :param maxValue: Upper clipping bound
-        :return: Clipped input value
+        Args:
+            value: Input value
+            minValue: Lower clipping bound
+            maxValue: Upper clipping bound
+
+        Returns:
+            Clipped input value
         """
 
         return max(minValue, min(value, maxValue))
@@ -157,7 +169,8 @@ class Emir:
         Static method.
         Returns max. 8bit integer number.
 
-        :return: Max. 8bit integer number
+        Returns:
+            Maximal 8 bit integer number
         """
 
         return 2**8 - 1
@@ -167,8 +180,11 @@ class Emir:
         """
         Converts string to list of integers.
 
-        :param string: Input string
-        :return: List of integers in decimal base
+        Args:
+            string: Input string
+
+        Returns:
+            List of integers in decimal base
         """
 
         groupSize = 2  # 2 strings in each group
@@ -182,8 +198,11 @@ class Emir:
         Private method.
         Checks if incoming or outgoing message is valid, i.e. if the checksum is equal to zero.
 
-        :param args: Variable number of integer arguments
-        :return: Information if the message is valid
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Information if the message is valid
         """
 
         if type(args[0]) is list:
@@ -217,15 +236,18 @@ class Emir:
             CS - checksum (NN+aa+bb+CS=0)
             /  - message end
 
-        :param commandName: The name of the command (move, translate, ...)
-        :param firstArg: The first argument of the robot command
-        :param secondArg: The second argument of the robot command
-        :param firstArgLimits: First argument's numeric limits
-        :param secondArgLimits: Second argument's numeric limits
-        :param useTwosComplement: Flag for using two's complement
-        :param useValueClipping: Flag for using value clipping
-        :param verbose: If used, commands are also printed to the console
-        :return: N/A  # TODO: return bool if the command is successfully sent.
+        Args:
+            commandName: The name of the command (move, translate, ...)
+            firstArg: The first argument of the robot command
+            econdArg: The second argument of the robot command
+            firstArgLimits: First argument's numeric limits
+            secondArgLimits: Second argument's numeric limits
+            useTwosComplement: Flag for using two's complement
+            useValueClipping: Flag for using value clipping
+            verbose: If used, commands are also printed to the console
+
+        Returns:
+            N/A  # TODO: return bool if the command is successfully sent.
         """
 
         # get the command number from command name
@@ -265,7 +287,8 @@ class Emir:
         Parses received robot's status message.
         Updates corresponding variables with received data (self.battery, self.speed, self.angle, ...).
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         statusMessage = self.statusMessage.decode('utf-8')
@@ -339,7 +362,8 @@ class Emir:
         If everything goes fine, self.sock is updated with the instance of created socket.
         If unable to connect, program exits with -1.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__getRobotAddress()
@@ -358,23 +382,25 @@ class Emir:
         """
         Receives and parses robot status message.
         If everything goes fine, self.update is set to True, else is False.
-        The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:
-            *      - message start
-            aa..ff - SHARP proximity sensors [cm]
-            uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]
-            vv     - translation speed [%]
-            rr     - rotation speed [%]
-            gg     - left motor PWM [%]
-            hh     - right motor PWM [%]
-            mm     - work mode (see eMIR documentation)
-            jj     - digital inputs status
-            kk     - azimuth [deg]
-            pp     - path [cm]
-            ss     - angle [deg/2]
-            CS     - checksum (aa+bb+..+ss+CS=0)
-            /      - message end
 
-        :return: N/A
+        The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:\n
+            *      - message start                                                  \n
+            aa..ff - SHARP proximity sensors [cm]                                   \n
+            uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]\n
+            vv     - translation speed [%]                                          \n
+            rr     - rotation speed [%]                                             \n
+            gg     - left motor PWM [%]                                             \n
+            hh     - right motor PWM [%]                                            \n
+            mm     - work mode (see eMIR documentation)                             \n
+            jj     - digital inputs status                                          \n
+            kk     - azimuth [deg]                                                  \n
+            pp     - path [cm]                                                      \n
+            ss     - angle [deg/2]                                                  \n
+            CS     - checksum (aa+bb+..+ss+CS=0)                                    \n
+            /      - message end                                                    \n
+
+        Returns:
+            N/A
         """
         self.statusMessage = None  # TODO: comment this and the next line when testing offline
         self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
@@ -392,8 +418,11 @@ class Emir:
         """
         Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.
 
-        :param printMessages: True if internal status values are to be printed in console, false otherwise
-        :return: N/A
+        Args:
+            printMessages: True if internal status values are to be printed in console, false otherwise
+
+        Returns:
+            N/A
         """
 
         self.sendInfoOn()
@@ -407,7 +436,8 @@ class Emir:
         """
         Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.sendInfoOff()
@@ -420,7 +450,8 @@ class Emir:
         """
         Sends command to stop the robot in the current execution.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('stop')
@@ -429,9 +460,12 @@ class Emir:
         """
         Sends "move" command to the robot with defined translation and rotational speed.
 
-        :param translationSpeed: Translation speed [%]
-        :param rotationSpeed: Rotation speed [%]
-        :return: N/A
+        Args:
+            translationSpeed: Translation speed [%]
+            rotationSpeed: Rotation speed [%]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [-100, 100]  # [%]
@@ -443,9 +477,12 @@ class Emir:
         """
         Sends "translate" command to the robot with defined path and translation speed.
 
-        :param path: Length for robot to travel [cm]
-        :param speed: Translation speed [%]
-        :return: N/A
+        Args:
+            path: Length for robot to travel [cm]
+            speed: Translation speed [%]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [-100, 100]  # [cm]
@@ -457,9 +494,12 @@ class Emir:
         """
         Sends "rotate" command to the robot with defined angle and rotation speed.
 
-        :param angle: Robot rotation angle [deg]
-        :param speed: Rotation speed [%]
-        :return: N/A
+        Args:
+            angle: Robot rotation angle [deg]
+            speed: Rotation speed [%]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [-180, 180]  # [deg]
@@ -473,8 +513,11 @@ class Emir:
         """
         Sends command to the robot which sets minimal allowed distance between robot and obstacle.
 
-        :param distance: Minimal distance between the robot and obstacle [cm]
-        :return: N/A
+        Args:
+            distance: Minimal distance between the robot and obstacle [cm]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [0, 50]  # [cm]
@@ -485,8 +528,11 @@ class Emir:
         """
         Sends command to the robot which sets maximal translation speed.
 
-        :param translationSpeed: Maximal robot translation speed [%]
-        :return: N/A
+        Args:
+            translationSpeed: Maximal robot translation speed [%]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [10, 100]  # [%]
@@ -497,8 +543,11 @@ class Emir:
         """
         Sends command to the robot which sets maximal rotation speed.
 
-        :param rotationSpeed: Maximal robot rotation speed [%]
-        :return: N/A
+        Args:
+            rotationSpeed: Maximal robot rotation speed [%]
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [10, 100]  # [%]
@@ -509,7 +558,8 @@ class Emir:
         """
         Sends command to the robot which sets azimuth value to zero.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('resetAzimuth')
@@ -518,7 +568,8 @@ class Emir:
         """
         Sends command to the robot which sets left and right wheel encoder counters to zero.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('resetCounters')
@@ -527,9 +578,12 @@ class Emir:
         """
         Sends command which sets digital inputs defined with the bitNumber argument to the desired state
 
-        :param bitNumber: Number of the bit (0, 1, 2, 3). If > 3, state argument sets multiple bits.
-        :param state: State of the bit defined with bitNumber.
-        :return: N/A
+        Args:
+            bitNumber: Number of the bit (0, 1, 2, 3). If > 3, state argument sets multiple bits
+            state: State of the bit defined with bitNumber
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [0, 4]
@@ -545,8 +599,11 @@ class Emir:
         """
         Sends command which activates the horn for the defined duration.
 
-        :param duration: Duration for which to activate the horn (duration/10 s)
-        :return: N/A
+        Args:
+            duration: Duration for which to activate the horn (duration/10 s)
+
+        Returns:
+            N/A
         """
 
         firstArgLimits = [0, 255]  # [1/10s]
@@ -557,7 +614,8 @@ class Emir:
         """
         Sends command which enables the EEPROM data to be returned via status message.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('sendInfoEEPROM', 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0
@@ -566,7 +624,8 @@ class Emir:
         """
         Sends command which enables the robot to send status messages.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('sendInfoOn', 1, useValueClipping=False)  # 240 is F0
@@ -575,7 +634,8 @@ class Emir:
         """
         Sends command which disables the robot to send status messages.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('sendInfoOff', 0, useValueClipping=False)  # 240 is F0
@@ -584,7 +644,8 @@ class Emir:
         """
         Sends command which enables robot's sensors.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('sensorsOn', 1, useValueClipping=False)
@@ -593,7 +654,8 @@ class Emir:
         """
         Sends command which disables robot's sensors.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('sensorsOff', 1, useValueClipping=False)
@@ -602,7 +664,8 @@ class Emir:
         """
         Sends command to turn off the robot.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         self.__sendCommand('turnOff')
@@ -613,7 +676,8 @@ class Emir:
         """
         Prints out values contained in the status message.
 
-        :return: N/A
+        Returns:
+            N/A
         """
 
         for sensorIdx in range(len(self.proximitySensors)):
@@ -633,19 +697,51 @@ class Emir:
 
 
 class StatusMessageWorker(threading.Thread):
+    """
+    Class that represents a thread of control.
+    Deals with receiving and parsing of robot status message and updating internal robot state variables.
+    """
+
     def __init__(self, robot: Emir, printMessages: bool):
+        """
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+            printMessages: True if internal status values are to be printed in console, false otherwise
+        """
         threading.Thread.__init__(self)
         self.robot = robot
         self.printMessages = printMessages
         self.stop = threading.Event()
 
     def stop(self):
+        """
+        Signals an event which the main thread is waiting for.
+        Used to stop the status message worker thread.
+
+        Returns:
+            N/A
+        """
         self.stop.set()
 
     def stopped(self):
+        """
+        Indicates that we want to exit the status message worker thread.
+
+        Returns:
+            N/A
+        """
         return self.stop.isSet()
 
     def run(self):
+        """
+        Method representing the thread's activity.
+        Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+
+        Returns:
+            N/A
+        """
         while True:
             if self.stopped():
                 print("Thread closed.")

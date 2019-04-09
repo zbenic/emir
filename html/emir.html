@@ -1,0 +1,2567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.3" />
+<title>emir API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>emir</code> module</h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">import bluetooth
+import threading
+import time
+import warnings
+
+warnings.simplefilter(&#39;always&#39;, UserWarning)
+
+VectorInt = [int]
+
+
+class Emir:
+    &#34;&#34;&#34;
+    Class for FMENA eMIR robot.
+    Implemented methods can be used to achieve basic robot movement.
+    Implementation of parsing of the return status message can also be used.
+    &#34;&#34;&#34;
+
+    def __init__(self, name: str, numOfProximitySensors: int=6):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            name: Name of the robot instance
+            numOfProximitySensors: Number of the proximity sensors (default is 6)
+        &#34;&#34;&#34;
+
+        self.name = name
+        self.address = None
+        self.numberOfRetries = 5
+        self.port = None
+        self.protocol = None
+        self.service = None
+        self.sock = None
+        self.commands = {&#39;stop&#39;:                     &#39;00&#39;,
+                         &#39;move&#39;:                     &#39;01&#39;,
+                         &#39;translate&#39;:                &#39;02&#39;,
+                         &#39;rotate&#39;:                   &#39;03&#39;,
+                         &#39;beep&#39;:                     &#39;04&#39;,
+                         &#39;sensorsOff&#39;:               &#39;05&#39;,
+                         &#39;sensorsOn&#39;:                &#39;05&#39;,
+                         &#39;setDigitalOutput&#39;:         &#39;06&#39;,
+                         &#39;sendInfoOn&#39;:               &#39;10&#39;,
+                         &#39;sendInfoOff&#39;:              &#39;10&#39;,
+                         &#39;sendInfoEEPROM&#39;:           &#39;10&#39;,
+                         &#39;setMinDistance&#39;:           &#39;11&#39;,
+                         &#39;setMaxSpeed&#39;:              &#39;12&#39;,
+                         &#39;setMaxRotation&#39;:           &#39;13&#39;,
+                         &#39;resetAzimuth&#39;:             &#39;14&#39;,
+                         &#39;resetCounters&#39;:            &#39;15&#39;,
+                         &#39;turnOff&#39;:                  &#39;FF&#39;}
+        self.statusMessage = None
+        self.proximitySensors = [0] * numOfProximitySensors
+        self.battery = 0
+        self.lowBattery = False
+        self.chargeVoltage = 0
+        self.charging = False
+        self.speed = None
+        self.rotation = None
+        self.leftMotorPwm = None
+        self.rightMotorPwm = None
+        self.workMode = None
+        self.digitalIn = None
+        self.azimuth = None
+        self.path = None
+        self.angle = None
+        self.update = False
+        self.setSpeed = 0
+        self.SetRotation = 0
+        self.badCheckSum = 0
+        self.statusWorker = None
+
+    def __getRobotAddress(self):
+        &#34;&#34;&#34;
+        Private method.
+        Retrieves the bluetooth address from the robot whose bluetooth device is the same name as the self.name.
+        The address is saved in the self.address.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        retryNumber = 0
+        while self.address is None and retryNumber &lt; self.numberOfRetries:
+            nearbyDevices = bluetooth.discover_devices()
+            for device in nearbyDevices:
+                if self.name == bluetooth.lookup_name(device):
+                    self.address = device
+                    print(&#34;Found &#34; + self.name + &#34; with address &#34; + str(self.address))
+                    break
+            if len(nearbyDevices) == 0:
+                warnings.warn(&#34;Trial &#34; + str(retryNumber) + &#34;. Could not find &#34; + self.name + &#34; among nearby bluetooth devices.&#34;)
+                retryNumber += 1
+
+    def __getRobotPort(self):
+        &#34;&#34;&#34;
+        Private method.
+        Updates self.port variable with one of the three eMIR robot port numbers, depending on the instance name.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        if self.name == &#34;eMIR-Yellow&#34;:
+            self.port = 1  # TODO: documentation says port num is 27
+        elif self.name == &#34;eMIR-Blue&#34;:
+            self.port = 1  # TODO: documentation says port num is 34
+        elif self.name == &#34;eMIR-Red&#34;:
+            self.port = 1  # TODO: documentation says port num is 50
+        else:
+            self.port = None
+
+    def __getCheckSum(self, *args: int):
+        &#34;&#34;&#34;
+        Private method.
+        Returns sum(args) mod 2^8+1 (max. 8bit number + 1).
+
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Checksum
+        &#34;&#34;&#34;
+
+        argumentSum = 0
+        for arg in args:
+            argumentSum += arg
+
+        return ((self.getMax8bitIntegerValue() + 1) - argumentSum % (self.getMax8bitIntegerValue() + 1)) % (self.getMax8bitIntegerValue() + 1)
+
+    @staticmethod
+    def getTwosComplement8bit(decimalBaseInteger: int):
+        &#34;&#34;&#34;
+        Static method.
+        Returns 8bit two&#39;s complement.
+
+        Args:
+            decimalBaseInteger: Integer number in decimal base
+
+        Returns
+            8 bit two&#39;s complement
+        &#34;&#34;&#34;
+
+        if (decimalBaseInteger.bit_length() &gt; 8) or (-128 &gt; decimalBaseInteger or decimalBaseInteger &gt; 127):
+            warnings.warn(&#34;The number does not fit in 8 bits or it&#39;s outside of [-128, 127] interval!&#34;)
+            return None
+        else:
+            return decimalBaseInteger if decimalBaseInteger &gt;= 0 else 256 + decimalBaseInteger
+
+    @staticmethod
+    def clipValue(value, minValue, maxValue):
+        &#34;&#34;&#34;
+        Static method.
+        Returns value clipped by the min and max limits
+
+        Args:
+            value: Input value
+            minValue: Lower clipping bound
+            maxValue: Upper clipping bound
+
+        Returns:
+            Clipped input value
+        &#34;&#34;&#34;
+
+        return max(minValue, min(value, maxValue))
+
+    @staticmethod
+    def getMax8bitIntegerValue():
+        &#34;&#34;&#34;
+        Static method.
+        Returns max. 8bit integer number.
+
+        Returns:
+            Maximal 8 bit integer number
+        &#34;&#34;&#34;
+
+        return 2**8 - 1
+
+    @staticmethod
+    def stringOfHexToListOfDecIntegers(string: str):
+        &#34;&#34;&#34;
+        Converts string to list of integers.
+
+        Args:
+            string: Input string
+
+        Returns:
+            List of integers in decimal base
+        &#34;&#34;&#34;
+
+        groupSize = 2  # 2 strings in each group
+        listOfHexStrings = [string[i:i + groupSize] for i in range(0, len(string), groupSize)]
+        listOfDecimalIntegers = [int(hexStr, 16) for hexStr in listOfHexStrings]
+
+        return listOfDecimalIntegers
+
+    def __messageIsValid(self, *args):
+        &#34;&#34;&#34;
+        Private method.
+        Checks if incoming or outgoing message is valid, i.e. if the checksum is equal to zero.
+
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Information if the message is valid
+        &#34;&#34;&#34;
+
+        if type(args[0]) is list:
+            argumentSum = sum(args[0])
+        else:
+            argumentSum = sum(args)
+
+        if argumentSum % (self.getMax8bitIntegerValue() + 1) == 0:
+            return True
+        else:
+            self.badCheckSum += 1
+            return False
+
+    def __sendCommand(self,
+                      commandName: str,
+                      firstArg: int = 0,
+                      secondArg: int = 0,
+                      firstArgLimits: VectorInt = [0, 0],
+                      secondArgLimits: VectorInt = [0, 0],
+                      useTwosComplement: bool = True,
+                      useValueClipping: bool = True,
+                      verbose: bool = False):
+        &#34;&#34;&#34;
+        Private method.
+        Generic method for sending commands to the robot.
+        Command format is #NNaabbCS/, where:
+            #  - message start
+            NN - command number
+            aa - first parameter
+            bb - second parameter
+            CS - checksum (NN+aa+bb+CS=0)
+            /  - message end
+
+        Args:
+            commandName: The name of the command (move, translate, ...)
+            firstArg: The first argument of the robot command
+            econdArg: The second argument of the robot command
+            firstArgLimits: First argument&#39;s numeric limits
+            secondArgLimits: Second argument&#39;s numeric limits
+            useTwosComplement: Flag for using two&#39;s complement
+            useValueClipping: Flag for using value clipping
+            verbose: If used, commands are also printed to the console
+
+        Returns:
+            N/A  # TODO: return bool if the command is successfully sent.
+        &#34;&#34;&#34;
+
+        # get the command number from command name
+        commandNumber = self.commands[commandName]
+        commandNumberInt = int(commandNumber, 16)
+
+        # value clipping
+        if useValueClipping:
+            firstArg = self.clipValue(firstArg, firstArgLimits[0], firstArgLimits[1])
+            secondArg = self.clipValue(secondArg, secondArgLimits[0], secondArgLimits[1])
+
+        # calculate 8 bit two&#39;s complement
+        if useTwosComplement:
+            firstArg = self.getTwosComplement8bit(firstArg)
+            secondArg = self.getTwosComplement8bit(secondArg)
+
+        # calculate checksum parameter of the command
+        checkSum = self.__getCheckSum(commandNumberInt, firstArg, secondArg)
+
+        # convert values form decimal to hex base
+        firstArg_hex = format(firstArg, &#39;02X&#39;)
+        secondArg_hex = format(secondArg, &#39;02X&#39;)
+        checkSum_hex = format(checkSum, &#39;02X&#39;)
+
+        # send message if the message is valid (NN+aa+bb+CS=0)
+        # raise warning in the case of invalid message
+        if self.__messageIsValid(commandNumberInt, firstArg, secondArg, checkSum):
+            if verbose:
+                print(&#34;#&#34; + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + &#34;/&#34;)  # for debugging
+            self.sock.send(&#34;#&#34; + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + &#34;/&#34;)
+        else:
+            warnings.warn(&#34;Command &#39;&#34; + commandName + &#34;&#39;: checksum is not 0!&#34;)
+
+    def __parseStatusMessage(self):
+        &#34;&#34;&#34;
+        Private method.
+        Parses received robot&#39;s status message.
+        Updates corresponding variables with received data (self.battery, self.speed, self.angle, ...).
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        statusMessage = self.statusMessage.decode(&#39;utf-8&#39;)
+        if statusMessage[0] != &#39;*&#39;:
+            warnings.warn(&#34;Problem occurred with parsing the robot status message. First character is not &#39;*&#39;, but &#34; + statusMessage[0] + &#34;.&#34;)
+        if statusMessage[-1] != &#39;/&#39;:
+            warnings.warn(&#34;Problem occurred with parsing the robot status message. Last character is not &#39;/&#39;, but &#34; + statusMessage[-1] + &#34;.&#34;)
+
+        statusMessageParts = self.stringOfHexToListOfDecIntegers(statusMessage[1:-1])
+
+        if not self.__messageIsValid(statusMessageParts):
+            warnings.warn(&#34;Message &#39;&#34; + statusMessage + &#34;&#39; invalid: checksum is not 0!&#34;)
+
+        # read proximity sensors data (bytes from 1:13) [cm]
+        for sensorIndex in range(0, len(self.proximitySensors)):
+            self.proximitySensors[sensorIndex] = int(statusMessage[(sensorIndex * 2 + 1):(sensorIndex * 2 + 1) + 2], 16)
+
+        # read battery/charging voltage [V]
+        msb = bool(format(int(statusMessage[13:15], 16), &#39;0&gt;8b&#39;)[0])
+        messageBatteryValueBinary = format(int(statusMessage[13:15], 16), &#39;0&gt;8b&#39;)[1:]
+        messageBatteryValueInt = int(messageBatteryValueBinary, 2)
+        if msb:  # if MSB is 1
+            if messageBatteryValueInt &gt; 20:
+                self.chargeVoltage = int(9 + messageBatteryValueInt / 17)
+            else:
+                self.chargeVoltage = 0
+            self.charging = False if self.chargeVoltage &lt; 9 else True
+        else:
+            self.battery = int(9 + messageBatteryValueInt / 17)
+            if self.battery &lt; 11.1:
+                self.lowBattery = True
+            else:
+                self.lowBattery = False
+
+        # read speed [%]
+        messageSpeedValueInt = int(statusMessage[15:17], 16)
+        self.speed = messageSpeedValueInt if messageSpeedValueInt &lt; 128 else messageSpeedValueInt - 256
+
+        # read rotation [%]
+        messageRotationValueInt = int(statusMessage[17:19], 16)
+        self.rotation = messageRotationValueInt if messageRotationValueInt &lt; 128 else messageRotationValueInt - 256
+
+        # read left motor PWM [%]
+        messageLeftMotorPwmValueInt = int(statusMessage[19:21], 16)
+        self.leftMotorPwm = messageLeftMotorPwmValueInt if messageLeftMotorPwmValueInt &lt; 128 else messageLeftMotorPwmValueInt - 256
+
+        # read right motor PWM [%]
+        messageRightMotorPwmValueInt = int(statusMessage[21:23], 16)
+        self.rightMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt &lt; 128 else messageRightMotorPwmValueInt - 256
+
+        # read work mode
+        self.workMode = int(statusMessage[23:25], 16)
+
+        # read digital input state
+        self.digitalIn = int(statusMessage[25:27], 16)
+
+        # read azimuth [deg]
+        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+
+        # read path [cm]
+        messagePathValueInt = int(statusMessage[29:31], 16)
+        self.path = int(messagePathValueInt * 1.03) if messagePathValueInt &lt; 128 else int((messagePathValueInt - 256) * 1.03)
+
+        # read angle [deg]
+        messageAngleValueInt = int(statusMessage[31:33], 16)
+        self.angle = int(messageAngleValueInt * 2.14) if messageAngleValueInt &lt; 128 else int((messageAngleValueInt - 256) * 2.14)
+
+    def connect(self):
+        &#34;&#34;&#34;
+        Connects with the bluetooth module on the eMIR robot.
+        If everything goes fine, self.sock is updated with the instance of created socket.
+        If unable to connect, program exits with -1.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__getRobotAddress()
+        self.__getRobotPort()
+
+        try:
+            self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            self.sock.connect((self.address, self.port))
+            print(self.name + &#34; is connected.&#34;)
+        except bluetooth.BluetoothError as error:
+            self.sock.close()
+            warnings.warn(&#34;Could not connect:&#34;, error)
+            exit(-1)
+
+    def getRobotStatus(self):
+        &#34;&#34;&#34;
+        Receives and parses robot status message.
+        If everything goes fine, self.update is set to True, else is False.
+
+        The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:\n
+            *      - message start                                                  \n
+            aa..ff - SHARP proximity sensors [cm]                                   \n
+            uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]\n
+            vv     - translation speed [%]                                          \n
+            rr     - rotation speed [%]                                             \n
+            gg     - left motor PWM [%]                                             \n
+            hh     - right motor PWM [%]                                            \n
+            mm     - work mode (see eMIR documentation)                             \n
+            jj     - digital inputs status                                          \n
+            kk     - azimuth [deg]                                                  \n
+            pp     - path [cm]                                                      \n
+            ss     - angle [deg/2]                                                  \n
+            CS     - checksum (aa+bb+..+ss+CS=0)                                    \n
+            /      - message end                                                    \n
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.statusMessage = None  # TODO: comment this and the next line when testing offline
+        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        messageStart = self.statusMessage.find(b&#39;*&#39;)
+        messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
+        self.statusMessage = self.statusMessage[messageStart:messageEnd]
+        if not self.statusMessage:
+            # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            self.update = False
+        else:
+            self.__parseStatusMessage()
+            self.update = True
+
+    def startReceivingRobotStatus(self, printMessages: bool = False):
+        &#34;&#34;&#34;
+        Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        Args:
+            printMessages: True if internal status values are to be printed in console, false otherwise
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.sendInfoOn()
+        time.sleep(0.2)
+
+        self.statusWorker = StatusMessageWorker(self, printMessages)
+        self.statusWorker.daemon = True
+        self.statusWorker.start()
+
+    def stopReceivingRobotStatus(self):
+        &#34;&#34;&#34;
+        Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.sendInfoOff()
+        time.sleep(0.2)
+
+        self.statusWorker.stop()
+        self.statusWorker.join()
+
+    def stop(self):
+        &#34;&#34;&#34;
+        Sends command to stop the robot in the current execution.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;stop&#39;)
+
+    def move(self, translationSpeed: int, rotationSpeed: int):
+        &#34;&#34;&#34;
+        Sends &#34;move&#34; command to the robot with defined translation and rotational speed.
+
+        Args:
+            translationSpeed: Translation speed [%]
+            rotationSpeed: Rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-100, 100]  # [%]
+        secondArgLimits = [-100, 100]  # [%]
+
+        self.__sendCommand(&#39;move&#39;, translationSpeed, rotationSpeed, firstArgLimits, secondArgLimits)
+
+    def translate(self, path: int, speed: int):
+        &#34;&#34;&#34;
+        Sends &#34;translate&#34; command to the robot with defined path and translation speed.
+
+        Args:
+            path: Length for robot to travel [cm]
+            speed: Translation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-100, 100]  # [cm]
+        secondArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;translate&#39;, path, speed, firstArgLimits, secondArgLimits)
+
+    def rotate(self, angle: int, speed: int):
+        &#34;&#34;&#34;
+        Sends &#34;rotate&#34; command to the robot with defined angle and rotation speed.
+
+        Args:
+            angle: Robot rotation angle [deg]
+            speed: Rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-180, 180]  # [deg]
+        secondArgLimits = [10, 100]  # [%]
+
+        angle = int(angle / 2)
+
+        self.__sendCommand(&#39;rotate&#39;, angle, speed, firstArgLimits, secondArgLimits)
+
+    def setMinDistance(self, distance: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets minimal allowed distance between robot and obstacle.
+
+        Args:
+            distance: Minimal distance between the robot and obstacle [cm]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 50]  # [cm]
+
+        self.__sendCommand(&#39;setMinDistance&#39;, distance, firstArgLimits=firstArgLimits)
+
+    def setMaxSpeed(self, translationSpeed: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets maximal translation speed.
+
+        Args:
+            translationSpeed: Maximal robot translation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;setMaxSpeed&#39;, translationSpeed, firstArgLimits=firstArgLimits)
+
+    def setMaxRotation(self, rotationSpeed: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets maximal rotation speed.
+
+        Args:
+            rotationSpeed: Maximal robot rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;setMaxRotation&#39;, rotationSpeed, firstArgLimits=firstArgLimits)
+
+    def resetAzimuth(self):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets azimuth value to zero.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;resetAzimuth&#39;)
+
+    def resetCounters(self):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets left and right wheel encoder counters to zero.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;resetCounters&#39;)
+
+    def setDigitalOutput(self, bitNumber: int, state: int):
+        &#34;&#34;&#34;
+        Sends command which sets digital inputs defined with the bitNumber argument to the desired state
+
+        Args:
+            bitNumber: Number of the bit (0, 1, 2, 3). If &gt; 3, state argument sets multiple bits
+            state: State of the bit defined with bitNumber
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 4]
+
+        if bitNumber &gt; 3:
+            secondArgLimits = [0, 15]
+        else:
+            secondArgLimits = [0, 1]
+
+        self.__sendCommand(&#39;setDigitalOutput&#39;, bitNumber, state, firstArgLimits, secondArgLimits)
+
+    def beep(self, duration: int):
+        &#34;&#34;&#34;
+        Sends command which activates the horn for the defined duration.
+
+        Args:
+            duration: Duration for which to activate the horn (duration/10 s)
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 255]  # [1/10s]
+
+        self.__sendCommand(&#39;beep&#39;, duration, firstArgLimits=firstArgLimits, useTwosComplement=False)
+
+    def sendInfoEEPROM(self):
+        &#34;&#34;&#34;
+        Sends command which enables the EEPROM data to be returned via status message.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoEEPROM&#39;, 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0
+
+    def sendInfoOn(self):
+        &#34;&#34;&#34;
+        Sends command which enables the robot to send status messages.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoOn&#39;, 1, useValueClipping=False)  # 240 is F0
+
+    def sendInfoOff(self):
+        &#34;&#34;&#34;
+        Sends command which disables the robot to send status messages.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoOff&#39;, 0, useValueClipping=False)  # 240 is F0
+
+    def sensorsOn(self):
+        &#34;&#34;&#34;
+        Sends command which enables robot&#39;s sensors.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sensorsOn&#39;, 1, useValueClipping=False)
+
+    def sensorsOff(self):
+        &#34;&#34;&#34;
+        Sends command which disables robot&#39;s sensors.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sensorsOff&#39;, 1, useValueClipping=False)
+
+    def turnOff(self):
+        &#34;&#34;&#34;
+        Sends command to turn off the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;turnOff&#39;)
+        self.sock.close()
+        # TODO: do thread cleanup
+
+    def printStatusMessageValues(self):
+        &#34;&#34;&#34;
+        Prints out values contained in the status message.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        for sensorIdx in range(len(self.proximitySensors)):
+            print(self.name + &#34; sensor &#34; + str(sensorIdx) + &#34;:&#34; + str(self.proximitySensors[sensorIdx]))
+
+        print(self.name + &#34; battery voltage:&#34; + str(self.battery))
+        print(self.name + &#34; charging voltage:&#34; + str(self.chargeVoltage))
+        print(self.name + &#34; translation speed:&#34; + str(self.speed))
+        print(self.name + &#34; rotation speed:&#34; + str(self.rotation))
+        print(self.name + &#34; left motor PWM:&#34; + str(self.leftMotorPwm))
+        print(self.name + &#34; right motor PWM:&#34; + str(self.rightMotorPwm))
+        print(self.name + &#34; work mode:&#34; + str(self.workMode))
+        print(self.name + &#34; digital input:&#34; + str(self.digitalIn))
+        print(self.name + &#34; azimuth:&#34; + str(self.azimuth))
+        print(self.name + &#34; path:&#34; + str(self.path))
+        print(self.name + &#34; angle:&#34; + str(self.angle))
+
+
+class StatusMessageWorker(threading.Thread):
+    &#34;&#34;&#34;
+    Class that represents a thread of control.
+    Deals with receiving and parsing of robot status message and updating internal robot state variables.
+    &#34;&#34;&#34;
+
+    def __init__(self, robot: Emir, printMessages: bool):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+            printMessages: True if internal status values are to be printed in console, false otherwise
+        &#34;&#34;&#34;
+        threading.Thread.__init__(self)
+        self.robot = robot
+        self.printMessages = printMessages
+        self.stop = threading.Event()
+
+    def stop(self):
+        &#34;&#34;&#34;
+        Signals an event which the main thread is waiting for.
+        Used to stop the status message worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.stop.set()
+
+    def stopped(self):
+        &#34;&#34;&#34;
+        Indicates that we want to exit the status message worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        return self.stop.isSet()
+
+    def run(self):
+        &#34;&#34;&#34;
+        Method representing the thread&#39;s activity.
+        Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        while True:
+            if self.stopped():
+                print(&#34;Thread closed.&#34;)
+                return
+            try:
+                self.robot.getRobotStatus()
+                if self.printMessages:
+                    self.robot.printStatusMessageValues()
+                time.sleep(0.2)  # Refresh rate is ~5 Hz
+            except:
+                print(&#34;Error occurred when getting robot status message!&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="emir.Emir"><code class="flex name class">
+<span>class <span class="ident">Emir</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Class for FMENA eMIR robot.
+Implemented methods can be used to achieve basic robot movement.
+Implementation of parsing of the return status message can also be used.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Emir:
+    &#34;&#34;&#34;
+    Class for FMENA eMIR robot.
+    Implemented methods can be used to achieve basic robot movement.
+    Implementation of parsing of the return status message can also be used.
+    &#34;&#34;&#34;
+
+    def __init__(self, name: str, numOfProximitySensors: int=6):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            name: Name of the robot instance
+            numOfProximitySensors: Number of the proximity sensors (default is 6)
+        &#34;&#34;&#34;
+
+        self.name = name
+        self.address = None
+        self.numberOfRetries = 5
+        self.port = None
+        self.protocol = None
+        self.service = None
+        self.sock = None
+        self.commands = {&#39;stop&#39;:                     &#39;00&#39;,
+                         &#39;move&#39;:                     &#39;01&#39;,
+                         &#39;translate&#39;:                &#39;02&#39;,
+                         &#39;rotate&#39;:                   &#39;03&#39;,
+                         &#39;beep&#39;:                     &#39;04&#39;,
+                         &#39;sensorsOff&#39;:               &#39;05&#39;,
+                         &#39;sensorsOn&#39;:                &#39;05&#39;,
+                         &#39;setDigitalOutput&#39;:         &#39;06&#39;,
+                         &#39;sendInfoOn&#39;:               &#39;10&#39;,
+                         &#39;sendInfoOff&#39;:              &#39;10&#39;,
+                         &#39;sendInfoEEPROM&#39;:           &#39;10&#39;,
+                         &#39;setMinDistance&#39;:           &#39;11&#39;,
+                         &#39;setMaxSpeed&#39;:              &#39;12&#39;,
+                         &#39;setMaxRotation&#39;:           &#39;13&#39;,
+                         &#39;resetAzimuth&#39;:             &#39;14&#39;,
+                         &#39;resetCounters&#39;:            &#39;15&#39;,
+                         &#39;turnOff&#39;:                  &#39;FF&#39;}
+        self.statusMessage = None
+        self.proximitySensors = [0] * numOfProximitySensors
+        self.battery = 0
+        self.lowBattery = False
+        self.chargeVoltage = 0
+        self.charging = False
+        self.speed = None
+        self.rotation = None
+        self.leftMotorPwm = None
+        self.rightMotorPwm = None
+        self.workMode = None
+        self.digitalIn = None
+        self.azimuth = None
+        self.path = None
+        self.angle = None
+        self.update = False
+        self.setSpeed = 0
+        self.SetRotation = 0
+        self.badCheckSum = 0
+        self.statusWorker = None
+
+    def __getRobotAddress(self):
+        &#34;&#34;&#34;
+        Private method.
+        Retrieves the bluetooth address from the robot whose bluetooth device is the same name as the self.name.
+        The address is saved in the self.address.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        retryNumber = 0
+        while self.address is None and retryNumber &lt; self.numberOfRetries:
+            nearbyDevices = bluetooth.discover_devices()
+            for device in nearbyDevices:
+                if self.name == bluetooth.lookup_name(device):
+                    self.address = device
+                    print(&#34;Found &#34; + self.name + &#34; with address &#34; + str(self.address))
+                    break
+            if len(nearbyDevices) == 0:
+                warnings.warn(&#34;Trial &#34; + str(retryNumber) + &#34;. Could not find &#34; + self.name + &#34; among nearby bluetooth devices.&#34;)
+                retryNumber += 1
+
+    def __getRobotPort(self):
+        &#34;&#34;&#34;
+        Private method.
+        Updates self.port variable with one of the three eMIR robot port numbers, depending on the instance name.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        if self.name == &#34;eMIR-Yellow&#34;:
+            self.port = 1  # TODO: documentation says port num is 27
+        elif self.name == &#34;eMIR-Blue&#34;:
+            self.port = 1  # TODO: documentation says port num is 34
+        elif self.name == &#34;eMIR-Red&#34;:
+            self.port = 1  # TODO: documentation says port num is 50
+        else:
+            self.port = None
+
+    def __getCheckSum(self, *args: int):
+        &#34;&#34;&#34;
+        Private method.
+        Returns sum(args) mod 2^8+1 (max. 8bit number + 1).
+
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Checksum
+        &#34;&#34;&#34;
+
+        argumentSum = 0
+        for arg in args:
+            argumentSum += arg
+
+        return ((self.getMax8bitIntegerValue() + 1) - argumentSum % (self.getMax8bitIntegerValue() + 1)) % (self.getMax8bitIntegerValue() + 1)
+
+    @staticmethod
+    def getTwosComplement8bit(decimalBaseInteger: int):
+        &#34;&#34;&#34;
+        Static method.
+        Returns 8bit two&#39;s complement.
+
+        Args:
+            decimalBaseInteger: Integer number in decimal base
+
+        Returns
+            8 bit two&#39;s complement
+        &#34;&#34;&#34;
+
+        if (decimalBaseInteger.bit_length() &gt; 8) or (-128 &gt; decimalBaseInteger or decimalBaseInteger &gt; 127):
+            warnings.warn(&#34;The number does not fit in 8 bits or it&#39;s outside of [-128, 127] interval!&#34;)
+            return None
+        else:
+            return decimalBaseInteger if decimalBaseInteger &gt;= 0 else 256 + decimalBaseInteger
+
+    @staticmethod
+    def clipValue(value, minValue, maxValue):
+        &#34;&#34;&#34;
+        Static method.
+        Returns value clipped by the min and max limits
+
+        Args:
+            value: Input value
+            minValue: Lower clipping bound
+            maxValue: Upper clipping bound
+
+        Returns:
+            Clipped input value
+        &#34;&#34;&#34;
+
+        return max(minValue, min(value, maxValue))
+
+    @staticmethod
+    def getMax8bitIntegerValue():
+        &#34;&#34;&#34;
+        Static method.
+        Returns max. 8bit integer number.
+
+        Returns:
+            Maximal 8 bit integer number
+        &#34;&#34;&#34;
+
+        return 2**8 - 1
+
+    @staticmethod
+    def stringOfHexToListOfDecIntegers(string: str):
+        &#34;&#34;&#34;
+        Converts string to list of integers.
+
+        Args:
+            string: Input string
+
+        Returns:
+            List of integers in decimal base
+        &#34;&#34;&#34;
+
+        groupSize = 2  # 2 strings in each group
+        listOfHexStrings = [string[i:i + groupSize] for i in range(0, len(string), groupSize)]
+        listOfDecimalIntegers = [int(hexStr, 16) for hexStr in listOfHexStrings]
+
+        return listOfDecimalIntegers
+
+    def __messageIsValid(self, *args):
+        &#34;&#34;&#34;
+        Private method.
+        Checks if incoming or outgoing message is valid, i.e. if the checksum is equal to zero.
+
+        Args:
+            args: Variable number of integer arguments
+
+        Returns:
+            Information if the message is valid
+        &#34;&#34;&#34;
+
+        if type(args[0]) is list:
+            argumentSum = sum(args[0])
+        else:
+            argumentSum = sum(args)
+
+        if argumentSum % (self.getMax8bitIntegerValue() + 1) == 0:
+            return True
+        else:
+            self.badCheckSum += 1
+            return False
+
+    def __sendCommand(self,
+                      commandName: str,
+                      firstArg: int = 0,
+                      secondArg: int = 0,
+                      firstArgLimits: VectorInt = [0, 0],
+                      secondArgLimits: VectorInt = [0, 0],
+                      useTwosComplement: bool = True,
+                      useValueClipping: bool = True,
+                      verbose: bool = False):
+        &#34;&#34;&#34;
+        Private method.
+        Generic method for sending commands to the robot.
+        Command format is #NNaabbCS/, where:
+            #  - message start
+            NN - command number
+            aa - first parameter
+            bb - second parameter
+            CS - checksum (NN+aa+bb+CS=0)
+            /  - message end
+
+        Args:
+            commandName: The name of the command (move, translate, ...)
+            firstArg: The first argument of the robot command
+            econdArg: The second argument of the robot command
+            firstArgLimits: First argument&#39;s numeric limits
+            secondArgLimits: Second argument&#39;s numeric limits
+            useTwosComplement: Flag for using two&#39;s complement
+            useValueClipping: Flag for using value clipping
+            verbose: If used, commands are also printed to the console
+
+        Returns:
+            N/A  # TODO: return bool if the command is successfully sent.
+        &#34;&#34;&#34;
+
+        # get the command number from command name
+        commandNumber = self.commands[commandName]
+        commandNumberInt = int(commandNumber, 16)
+
+        # value clipping
+        if useValueClipping:
+            firstArg = self.clipValue(firstArg, firstArgLimits[0], firstArgLimits[1])
+            secondArg = self.clipValue(secondArg, secondArgLimits[0], secondArgLimits[1])
+
+        # calculate 8 bit two&#39;s complement
+        if useTwosComplement:
+            firstArg = self.getTwosComplement8bit(firstArg)
+            secondArg = self.getTwosComplement8bit(secondArg)
+
+        # calculate checksum parameter of the command
+        checkSum = self.__getCheckSum(commandNumberInt, firstArg, secondArg)
+
+        # convert values form decimal to hex base
+        firstArg_hex = format(firstArg, &#39;02X&#39;)
+        secondArg_hex = format(secondArg, &#39;02X&#39;)
+        checkSum_hex = format(checkSum, &#39;02X&#39;)
+
+        # send message if the message is valid (NN+aa+bb+CS=0)
+        # raise warning in the case of invalid message
+        if self.__messageIsValid(commandNumberInt, firstArg, secondArg, checkSum):
+            if verbose:
+                print(&#34;#&#34; + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + &#34;/&#34;)  # for debugging
+            self.sock.send(&#34;#&#34; + commandNumber + firstArg_hex + secondArg_hex + checkSum_hex + &#34;/&#34;)
+        else:
+            warnings.warn(&#34;Command &#39;&#34; + commandName + &#34;&#39;: checksum is not 0!&#34;)
+
+    def __parseStatusMessage(self):
+        &#34;&#34;&#34;
+        Private method.
+        Parses received robot&#39;s status message.
+        Updates corresponding variables with received data (self.battery, self.speed, self.angle, ...).
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        statusMessage = self.statusMessage.decode(&#39;utf-8&#39;)
+        if statusMessage[0] != &#39;*&#39;:
+            warnings.warn(&#34;Problem occurred with parsing the robot status message. First character is not &#39;*&#39;, but &#34; + statusMessage[0] + &#34;.&#34;)
+        if statusMessage[-1] != &#39;/&#39;:
+            warnings.warn(&#34;Problem occurred with parsing the robot status message. Last character is not &#39;/&#39;, but &#34; + statusMessage[-1] + &#34;.&#34;)
+
+        statusMessageParts = self.stringOfHexToListOfDecIntegers(statusMessage[1:-1])
+
+        if not self.__messageIsValid(statusMessageParts):
+            warnings.warn(&#34;Message &#39;&#34; + statusMessage + &#34;&#39; invalid: checksum is not 0!&#34;)
+
+        # read proximity sensors data (bytes from 1:13) [cm]
+        for sensorIndex in range(0, len(self.proximitySensors)):
+            self.proximitySensors[sensorIndex] = int(statusMessage[(sensorIndex * 2 + 1):(sensorIndex * 2 + 1) + 2], 16)
+
+        # read battery/charging voltage [V]
+        msb = bool(format(int(statusMessage[13:15], 16), &#39;0&gt;8b&#39;)[0])
+        messageBatteryValueBinary = format(int(statusMessage[13:15], 16), &#39;0&gt;8b&#39;)[1:]
+        messageBatteryValueInt = int(messageBatteryValueBinary, 2)
+        if msb:  # if MSB is 1
+            if messageBatteryValueInt &gt; 20:
+                self.chargeVoltage = int(9 + messageBatteryValueInt / 17)
+            else:
+                self.chargeVoltage = 0
+            self.charging = False if self.chargeVoltage &lt; 9 else True
+        else:
+            self.battery = int(9 + messageBatteryValueInt / 17)
+            if self.battery &lt; 11.1:
+                self.lowBattery = True
+            else:
+                self.lowBattery = False
+
+        # read speed [%]
+        messageSpeedValueInt = int(statusMessage[15:17], 16)
+        self.speed = messageSpeedValueInt if messageSpeedValueInt &lt; 128 else messageSpeedValueInt - 256
+
+        # read rotation [%]
+        messageRotationValueInt = int(statusMessage[17:19], 16)
+        self.rotation = messageRotationValueInt if messageRotationValueInt &lt; 128 else messageRotationValueInt - 256
+
+        # read left motor PWM [%]
+        messageLeftMotorPwmValueInt = int(statusMessage[19:21], 16)
+        self.leftMotorPwm = messageLeftMotorPwmValueInt if messageLeftMotorPwmValueInt &lt; 128 else messageLeftMotorPwmValueInt - 256
+
+        # read right motor PWM [%]
+        messageRightMotorPwmValueInt = int(statusMessage[21:23], 16)
+        self.rightMotorPwm = messageRightMotorPwmValueInt if messageRightMotorPwmValueInt &lt; 128 else messageRightMotorPwmValueInt - 256
+
+        # read work mode
+        self.workMode = int(statusMessage[23:25], 16)
+
+        # read digital input state
+        self.digitalIn = int(statusMessage[25:27], 16)
+
+        # read azimuth [deg]
+        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+
+        # read path [cm]
+        messagePathValueInt = int(statusMessage[29:31], 16)
+        self.path = int(messagePathValueInt * 1.03) if messagePathValueInt &lt; 128 else int((messagePathValueInt - 256) * 1.03)
+
+        # read angle [deg]
+        messageAngleValueInt = int(statusMessage[31:33], 16)
+        self.angle = int(messageAngleValueInt * 2.14) if messageAngleValueInt &lt; 128 else int((messageAngleValueInt - 256) * 2.14)
+
+    def connect(self):
+        &#34;&#34;&#34;
+        Connects with the bluetooth module on the eMIR robot.
+        If everything goes fine, self.sock is updated with the instance of created socket.
+        If unable to connect, program exits with -1.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__getRobotAddress()
+        self.__getRobotPort()
+
+        try:
+            self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            self.sock.connect((self.address, self.port))
+            print(self.name + &#34; is connected.&#34;)
+        except bluetooth.BluetoothError as error:
+            self.sock.close()
+            warnings.warn(&#34;Could not connect:&#34;, error)
+            exit(-1)
+
+    def getRobotStatus(self):
+        &#34;&#34;&#34;
+        Receives and parses robot status message.
+        If everything goes fine, self.update is set to True, else is False.
+
+        The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:\n
+            *      - message start                                                  \n
+            aa..ff - SHARP proximity sensors [cm]                                   \n
+            uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]\n
+            vv     - translation speed [%]                                          \n
+            rr     - rotation speed [%]                                             \n
+            gg     - left motor PWM [%]                                             \n
+            hh     - right motor PWM [%]                                            \n
+            mm     - work mode (see eMIR documentation)                             \n
+            jj     - digital inputs status                                          \n
+            kk     - azimuth [deg]                                                  \n
+            pp     - path [cm]                                                      \n
+            ss     - angle [deg/2]                                                  \n
+            CS     - checksum (aa+bb+..+ss+CS=0)                                    \n
+            /      - message end                                                    \n
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.statusMessage = None  # TODO: comment this and the next line when testing offline
+        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        messageStart = self.statusMessage.find(b&#39;*&#39;)
+        messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
+        self.statusMessage = self.statusMessage[messageStart:messageEnd]
+        if not self.statusMessage:
+            # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            self.update = False
+        else:
+            self.__parseStatusMessage()
+            self.update = True
+
+    def startReceivingRobotStatus(self, printMessages: bool = False):
+        &#34;&#34;&#34;
+        Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        Args:
+            printMessages: True if internal status values are to be printed in console, false otherwise
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.sendInfoOn()
+        time.sleep(0.2)
+
+        self.statusWorker = StatusMessageWorker(self, printMessages)
+        self.statusWorker.daemon = True
+        self.statusWorker.start()
+
+    def stopReceivingRobotStatus(self):
+        &#34;&#34;&#34;
+        Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.sendInfoOff()
+        time.sleep(0.2)
+
+        self.statusWorker.stop()
+        self.statusWorker.join()
+
+    def stop(self):
+        &#34;&#34;&#34;
+        Sends command to stop the robot in the current execution.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;stop&#39;)
+
+    def move(self, translationSpeed: int, rotationSpeed: int):
+        &#34;&#34;&#34;
+        Sends &#34;move&#34; command to the robot with defined translation and rotational speed.
+
+        Args:
+            translationSpeed: Translation speed [%]
+            rotationSpeed: Rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-100, 100]  # [%]
+        secondArgLimits = [-100, 100]  # [%]
+
+        self.__sendCommand(&#39;move&#39;, translationSpeed, rotationSpeed, firstArgLimits, secondArgLimits)
+
+    def translate(self, path: int, speed: int):
+        &#34;&#34;&#34;
+        Sends &#34;translate&#34; command to the robot with defined path and translation speed.
+
+        Args:
+            path: Length for robot to travel [cm]
+            speed: Translation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-100, 100]  # [cm]
+        secondArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;translate&#39;, path, speed, firstArgLimits, secondArgLimits)
+
+    def rotate(self, angle: int, speed: int):
+        &#34;&#34;&#34;
+        Sends &#34;rotate&#34; command to the robot with defined angle and rotation speed.
+
+        Args:
+            angle: Robot rotation angle [deg]
+            speed: Rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [-180, 180]  # [deg]
+        secondArgLimits = [10, 100]  # [%]
+
+        angle = int(angle / 2)
+
+        self.__sendCommand(&#39;rotate&#39;, angle, speed, firstArgLimits, secondArgLimits)
+
+    def setMinDistance(self, distance: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets minimal allowed distance between robot and obstacle.
+
+        Args:
+            distance: Minimal distance between the robot and obstacle [cm]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 50]  # [cm]
+
+        self.__sendCommand(&#39;setMinDistance&#39;, distance, firstArgLimits=firstArgLimits)
+
+    def setMaxSpeed(self, translationSpeed: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets maximal translation speed.
+
+        Args:
+            translationSpeed: Maximal robot translation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;setMaxSpeed&#39;, translationSpeed, firstArgLimits=firstArgLimits)
+
+    def setMaxRotation(self, rotationSpeed: int):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets maximal rotation speed.
+
+        Args:
+            rotationSpeed: Maximal robot rotation speed [%]
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [10, 100]  # [%]
+
+        self.__sendCommand(&#39;setMaxRotation&#39;, rotationSpeed, firstArgLimits=firstArgLimits)
+
+    def resetAzimuth(self):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets azimuth value to zero.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;resetAzimuth&#39;)
+
+    def resetCounters(self):
+        &#34;&#34;&#34;
+        Sends command to the robot which sets left and right wheel encoder counters to zero.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;resetCounters&#39;)
+
+    def setDigitalOutput(self, bitNumber: int, state: int):
+        &#34;&#34;&#34;
+        Sends command which sets digital inputs defined with the bitNumber argument to the desired state
+
+        Args:
+            bitNumber: Number of the bit (0, 1, 2, 3). If &gt; 3, state argument sets multiple bits
+            state: State of the bit defined with bitNumber
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 4]
+
+        if bitNumber &gt; 3:
+            secondArgLimits = [0, 15]
+        else:
+            secondArgLimits = [0, 1]
+
+        self.__sendCommand(&#39;setDigitalOutput&#39;, bitNumber, state, firstArgLimits, secondArgLimits)
+
+    def beep(self, duration: int):
+        &#34;&#34;&#34;
+        Sends command which activates the horn for the defined duration.
+
+        Args:
+            duration: Duration for which to activate the horn (duration/10 s)
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        firstArgLimits = [0, 255]  # [1/10s]
+
+        self.__sendCommand(&#39;beep&#39;, duration, firstArgLimits=firstArgLimits, useTwosComplement=False)
+
+    def sendInfoEEPROM(self):
+        &#34;&#34;&#34;
+        Sends command which enables the EEPROM data to be returned via status message.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoEEPROM&#39;, 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0
+
+    def sendInfoOn(self):
+        &#34;&#34;&#34;
+        Sends command which enables the robot to send status messages.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoOn&#39;, 1, useValueClipping=False)  # 240 is F0
+
+    def sendInfoOff(self):
+        &#34;&#34;&#34;
+        Sends command which disables the robot to send status messages.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sendInfoOff&#39;, 0, useValueClipping=False)  # 240 is F0
+
+    def sensorsOn(self):
+        &#34;&#34;&#34;
+        Sends command which enables robot&#39;s sensors.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sensorsOn&#39;, 1, useValueClipping=False)
+
+    def sensorsOff(self):
+        &#34;&#34;&#34;
+        Sends command which disables robot&#39;s sensors.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;sensorsOff&#39;, 1, useValueClipping=False)
+
+    def turnOff(self):
+        &#34;&#34;&#34;
+        Sends command to turn off the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.__sendCommand(&#39;turnOff&#39;)
+        self.sock.close()
+        # TODO: do thread cleanup
+
+    def printStatusMessageValues(self):
+        &#34;&#34;&#34;
+        Prints out values contained in the status message.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        for sensorIdx in range(len(self.proximitySensors)):
+            print(self.name + &#34; sensor &#34; + str(sensorIdx) + &#34;:&#34; + str(self.proximitySensors[sensorIdx]))
+
+        print(self.name + &#34; battery voltage:&#34; + str(self.battery))
+        print(self.name + &#34; charging voltage:&#34; + str(self.chargeVoltage))
+        print(self.name + &#34; translation speed:&#34; + str(self.speed))
+        print(self.name + &#34; rotation speed:&#34; + str(self.rotation))
+        print(self.name + &#34; left motor PWM:&#34; + str(self.leftMotorPwm))
+        print(self.name + &#34; right motor PWM:&#34; + str(self.rightMotorPwm))
+        print(self.name + &#34; work mode:&#34; + str(self.workMode))
+        print(self.name + &#34; digital input:&#34; + str(self.digitalIn))
+        print(self.name + &#34; azimuth:&#34; + str(self.azimuth))
+        print(self.name + &#34; path:&#34; + str(self.path))
+        print(self.name + &#34; angle:&#34; + str(self.angle))</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="emir.Emir.clipValue"><code class="name flex">
+<span>def <span class="ident">clipValue</span></span>(<span>value, minValue, maxValue)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Static method.
+Returns value clipped by the min and max limits</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong></dt>
+<dd>Input value</dd>
+<dt><strong><code>minValue</code></strong></dt>
+<dd>Lower clipping bound</dd>
+<dt><strong><code>maxValue</code></strong></dt>
+<dd>Upper clipping bound</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Clipped input value</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def clipValue(value, minValue, maxValue):
+    &#34;&#34;&#34;
+    Static method.
+    Returns value clipped by the min and max limits
+
+    Args:
+        value: Input value
+        minValue: Lower clipping bound
+        maxValue: Upper clipping bound
+
+    Returns:
+        Clipped input value
+    &#34;&#34;&#34;
+
+    return max(minValue, min(value, maxValue))</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.getMax8bitIntegerValue"><code class="name flex">
+<span>def <span class="ident">getMax8bitIntegerValue</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Static method.
+Returns max. 8bit integer number.</p>
+<h2 id="returns">Returns</h2>
+<p>Maximal 8 bit integer number</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def getMax8bitIntegerValue():
+    &#34;&#34;&#34;
+    Static method.
+    Returns max. 8bit integer number.
+
+    Returns:
+        Maximal 8 bit integer number
+    &#34;&#34;&#34;
+
+    return 2**8 - 1</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.getTwosComplement8bit"><code class="name flex">
+<span>def <span class="ident">getTwosComplement8bit</span></span>(<span>decimalBaseInteger)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Static method.
+Returns 8bit two's complement.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>decimalBaseInteger</code></strong></dt>
+<dd>Integer number in decimal base</dd>
+<dt><strong><code>Returns</code></strong></dt>
+<dd>8 bit two's complement</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def getTwosComplement8bit(decimalBaseInteger: int):
+    &#34;&#34;&#34;
+    Static method.
+    Returns 8bit two&#39;s complement.
+
+    Args:
+        decimalBaseInteger: Integer number in decimal base
+
+    Returns
+        8 bit two&#39;s complement
+    &#34;&#34;&#34;
+
+    if (decimalBaseInteger.bit_length() &gt; 8) or (-128 &gt; decimalBaseInteger or decimalBaseInteger &gt; 127):
+        warnings.warn(&#34;The number does not fit in 8 bits or it&#39;s outside of [-128, 127] interval!&#34;)
+        return None
+    else:
+        return decimalBaseInteger if decimalBaseInteger &gt;= 0 else 256 + decimalBaseInteger</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.stringOfHexToListOfDecIntegers"><code class="name flex">
+<span>def <span class="ident">stringOfHexToListOfDecIntegers</span></span>(<span>string)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Converts string to list of integers.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>string</code></strong></dt>
+<dd>Input string</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>List of integers in decimal base</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def stringOfHexToListOfDecIntegers(string: str):
+    &#34;&#34;&#34;
+    Converts string to list of integers.
+
+    Args:
+        string: Input string
+
+    Returns:
+        List of integers in decimal base
+    &#34;&#34;&#34;
+
+    groupSize = 2  # 2 strings in each group
+    listOfHexStrings = [string[i:i + groupSize] for i in range(0, len(string), groupSize)]
+    listOfDecimalIntegers = [int(hexStr, 16) for hexStr in listOfHexStrings]
+
+    return listOfDecimalIntegers</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="emir.Emir.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, name, numOfProximitySensors=6)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructor</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong></dt>
+<dd>Name of the robot instance</dd>
+<dt><strong><code>numOfProximitySensors</code></strong></dt>
+<dd>Number of the proximity sensors (default is 6)</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, name: str, numOfProximitySensors: int=6):
+    &#34;&#34;&#34;
+    Constructor
+
+    Args:
+        name: Name of the robot instance
+        numOfProximitySensors: Number of the proximity sensors (default is 6)
+    &#34;&#34;&#34;
+
+    self.name = name
+    self.address = None
+    self.numberOfRetries = 5
+    self.port = None
+    self.protocol = None
+    self.service = None
+    self.sock = None
+    self.commands = {&#39;stop&#39;:                     &#39;00&#39;,
+                     &#39;move&#39;:                     &#39;01&#39;,
+                     &#39;translate&#39;:                &#39;02&#39;,
+                     &#39;rotate&#39;:                   &#39;03&#39;,
+                     &#39;beep&#39;:                     &#39;04&#39;,
+                     &#39;sensorsOff&#39;:               &#39;05&#39;,
+                     &#39;sensorsOn&#39;:                &#39;05&#39;,
+                     &#39;setDigitalOutput&#39;:         &#39;06&#39;,
+                     &#39;sendInfoOn&#39;:               &#39;10&#39;,
+                     &#39;sendInfoOff&#39;:              &#39;10&#39;,
+                     &#39;sendInfoEEPROM&#39;:           &#39;10&#39;,
+                     &#39;setMinDistance&#39;:           &#39;11&#39;,
+                     &#39;setMaxSpeed&#39;:              &#39;12&#39;,
+                     &#39;setMaxRotation&#39;:           &#39;13&#39;,
+                     &#39;resetAzimuth&#39;:             &#39;14&#39;,
+                     &#39;resetCounters&#39;:            &#39;15&#39;,
+                     &#39;turnOff&#39;:                  &#39;FF&#39;}
+    self.statusMessage = None
+    self.proximitySensors = [0] * numOfProximitySensors
+    self.battery = 0
+    self.lowBattery = False
+    self.chargeVoltage = 0
+    self.charging = False
+    self.speed = None
+    self.rotation = None
+    self.leftMotorPwm = None
+    self.rightMotorPwm = None
+    self.workMode = None
+    self.digitalIn = None
+    self.azimuth = None
+    self.path = None
+    self.angle = None
+    self.update = False
+    self.setSpeed = 0
+    self.SetRotation = 0
+    self.badCheckSum = 0
+    self.statusWorker = None</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.beep"><code class="name flex">
+<span>def <span class="ident">beep</span></span>(<span>self, duration)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which activates the horn for the defined duration.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>duration</code></strong></dt>
+<dd>Duration for which to activate the horn (duration/10 s)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def beep(self, duration: int):
+    &#34;&#34;&#34;
+    Sends command which activates the horn for the defined duration.
+
+    Args:
+        duration: Duration for which to activate the horn (duration/10 s)
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [0, 255]  # [1/10s]
+
+    self.__sendCommand(&#39;beep&#39;, duration, firstArgLimits=firstArgLimits, useTwosComplement=False)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.connect"><code class="name flex">
+<span>def <span class="ident">connect</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Connects with the bluetooth module on the eMIR robot.
+If everything goes fine, self.sock is updated with the instance of created socket.
+If unable to connect, program exits with -1.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def connect(self):
+    &#34;&#34;&#34;
+    Connects with the bluetooth module on the eMIR robot.
+    If everything goes fine, self.sock is updated with the instance of created socket.
+    If unable to connect, program exits with -1.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__getRobotAddress()
+    self.__getRobotPort()
+
+    try:
+        self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+        self.sock.connect((self.address, self.port))
+        print(self.name + &#34; is connected.&#34;)
+    except bluetooth.BluetoothError as error:
+        self.sock.close()
+        warnings.warn(&#34;Could not connect:&#34;, error)
+        exit(-1)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.getRobotStatus"><code class="name flex">
+<span>def <span class="ident">getRobotStatus</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Receives and parses robot status message.
+If everything goes fine, self.update is set to True, else is False.</p>
+<p>The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:</p>
+<pre><code>*      - message start
+
+aa..ff - SHARP proximity sensors [cm]
+
+uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]
+
+vv     - translation speed [%]
+
+rr     - rotation speed [%]
+
+gg     - left motor PWM [%]
+
+hh     - right motor PWM [%]
+
+mm     - work mode (see eMIR documentation)
+
+jj     - digital inputs status
+
+kk     - azimuth [deg]
+
+pp     - path [cm]
+
+ss     - angle [deg/2]
+
+CS     - checksum (aa+bb+..+ss+CS=0)
+
+/      - message end
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def getRobotStatus(self):
+    &#34;&#34;&#34;
+    Receives and parses robot status message.
+    If everything goes fine, self.update is set to True, else is False.
+
+    The message format is *aabbccddeeffuuvvrrgghhmmjjkkppssCS/, where:\n
+        *      - message start                                                  \n
+        aa..ff - SHARP proximity sensors [cm]                                   \n
+        uu     - battery or charging voltage (MSB=0, or MSB=1, respectively) [V]\n
+        vv     - translation speed [%]                                          \n
+        rr     - rotation speed [%]                                             \n
+        gg     - left motor PWM [%]                                             \n
+        hh     - right motor PWM [%]                                            \n
+        mm     - work mode (see eMIR documentation)                             \n
+        jj     - digital inputs status                                          \n
+        kk     - azimuth [deg]                                                  \n
+        pp     - path [cm]                                                      \n
+        ss     - angle [deg/2]                                                  \n
+        CS     - checksum (aa+bb+..+ss+CS=0)                                    \n
+        /      - message end                                                    \n
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    self.statusMessage = None  # TODO: comment this and the next line when testing offline
+    self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+    messageStart = self.statusMessage.find(b&#39;*&#39;)
+    messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
+    self.statusMessage = self.statusMessage[messageStart:messageEnd]
+    if not self.statusMessage:
+        # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+        self.update = False
+    else:
+        self.__parseStatusMessage()
+        self.update = True</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.move"><code class="name flex">
+<span>def <span class="ident">move</span></span>(<span>self, translationSpeed, rotationSpeed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends "move" command to the robot with defined translation and rotational speed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>translationSpeed</code></strong></dt>
+<dd>Translation speed [%]</dd>
+<dt><strong><code>rotationSpeed</code></strong></dt>
+<dd>Rotation speed [%]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def move(self, translationSpeed: int, rotationSpeed: int):
+    &#34;&#34;&#34;
+    Sends &#34;move&#34; command to the robot with defined translation and rotational speed.
+
+    Args:
+        translationSpeed: Translation speed [%]
+        rotationSpeed: Rotation speed [%]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [-100, 100]  # [%]
+    secondArgLimits = [-100, 100]  # [%]
+
+    self.__sendCommand(&#39;move&#39;, translationSpeed, rotationSpeed, firstArgLimits, secondArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.printStatusMessageValues"><code class="name flex">
+<span>def <span class="ident">printStatusMessageValues</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Prints out values contained in the status message.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def printStatusMessageValues(self):
+    &#34;&#34;&#34;
+    Prints out values contained in the status message.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    for sensorIdx in range(len(self.proximitySensors)):
+        print(self.name + &#34; sensor &#34; + str(sensorIdx) + &#34;:&#34; + str(self.proximitySensors[sensorIdx]))
+
+    print(self.name + &#34; battery voltage:&#34; + str(self.battery))
+    print(self.name + &#34; charging voltage:&#34; + str(self.chargeVoltage))
+    print(self.name + &#34; translation speed:&#34; + str(self.speed))
+    print(self.name + &#34; rotation speed:&#34; + str(self.rotation))
+    print(self.name + &#34; left motor PWM:&#34; + str(self.leftMotorPwm))
+    print(self.name + &#34; right motor PWM:&#34; + str(self.rightMotorPwm))
+    print(self.name + &#34; work mode:&#34; + str(self.workMode))
+    print(self.name + &#34; digital input:&#34; + str(self.digitalIn))
+    print(self.name + &#34; azimuth:&#34; + str(self.azimuth))
+    print(self.name + &#34; path:&#34; + str(self.path))
+    print(self.name + &#34; angle:&#34; + str(self.angle))</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.resetAzimuth"><code class="name flex">
+<span>def <span class="ident">resetAzimuth</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to the robot which sets azimuth value to zero.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resetAzimuth(self):
+    &#34;&#34;&#34;
+    Sends command to the robot which sets azimuth value to zero.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;resetAzimuth&#39;)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.resetCounters"><code class="name flex">
+<span>def <span class="ident">resetCounters</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to the robot which sets left and right wheel encoder counters to zero.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resetCounters(self):
+    &#34;&#34;&#34;
+    Sends command to the robot which sets left and right wheel encoder counters to zero.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;resetCounters&#39;)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.rotate"><code class="name flex">
+<span>def <span class="ident">rotate</span></span>(<span>self, angle, speed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends "rotate" command to the robot with defined angle and rotation speed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>angle</code></strong></dt>
+<dd>Robot rotation angle [deg]</dd>
+<dt><strong><code>speed</code></strong></dt>
+<dd>Rotation speed [%]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def rotate(self, angle: int, speed: int):
+    &#34;&#34;&#34;
+    Sends &#34;rotate&#34; command to the robot with defined angle and rotation speed.
+
+    Args:
+        angle: Robot rotation angle [deg]
+        speed: Rotation speed [%]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [-180, 180]  # [deg]
+    secondArgLimits = [10, 100]  # [%]
+
+    angle = int(angle / 2)
+
+    self.__sendCommand(&#39;rotate&#39;, angle, speed, firstArgLimits, secondArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.sendInfoEEPROM"><code class="name flex">
+<span>def <span class="ident">sendInfoEEPROM</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which enables the EEPROM data to be returned via status message.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sendInfoEEPROM(self):
+    &#34;&#34;&#34;
+    Sends command which enables the EEPROM data to be returned via status message.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;sendInfoEEPROM&#39;, 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.sendInfoOff"><code class="name flex">
+<span>def <span class="ident">sendInfoOff</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which disables the robot to send status messages.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sendInfoOff(self):
+    &#34;&#34;&#34;
+    Sends command which disables the robot to send status messages.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;sendInfoOff&#39;, 0, useValueClipping=False)  # 240 is F0</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.sendInfoOn"><code class="name flex">
+<span>def <span class="ident">sendInfoOn</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which enables the robot to send status messages.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sendInfoOn(self):
+    &#34;&#34;&#34;
+    Sends command which enables the robot to send status messages.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;sendInfoOn&#39;, 1, useValueClipping=False)  # 240 is F0</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.sensorsOff"><code class="name flex">
+<span>def <span class="ident">sensorsOff</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which disables robot's sensors.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sensorsOff(self):
+    &#34;&#34;&#34;
+    Sends command which disables robot&#39;s sensors.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;sensorsOff&#39;, 1, useValueClipping=False)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.sensorsOn"><code class="name flex">
+<span>def <span class="ident">sensorsOn</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which enables robot's sensors.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sensorsOn(self):
+    &#34;&#34;&#34;
+    Sends command which enables robot&#39;s sensors.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;sensorsOn&#39;, 1, useValueClipping=False)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.setDigitalOutput"><code class="name flex">
+<span>def <span class="ident">setDigitalOutput</span></span>(<span>self, bitNumber, state)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command which sets digital inputs defined with the bitNumber argument to the desired state</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>bitNumber</code></strong></dt>
+<dd>Number of the bit (0, 1, 2, 3). If &gt; 3, state argument sets multiple bits</dd>
+<dt><strong><code>state</code></strong></dt>
+<dd>State of the bit defined with bitNumber</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def setDigitalOutput(self, bitNumber: int, state: int):
+    &#34;&#34;&#34;
+    Sends command which sets digital inputs defined with the bitNumber argument to the desired state
+
+    Args:
+        bitNumber: Number of the bit (0, 1, 2, 3). If &gt; 3, state argument sets multiple bits
+        state: State of the bit defined with bitNumber
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [0, 4]
+
+    if bitNumber &gt; 3:
+        secondArgLimits = [0, 15]
+    else:
+        secondArgLimits = [0, 1]
+
+    self.__sendCommand(&#39;setDigitalOutput&#39;, bitNumber, state, firstArgLimits, secondArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.setMaxRotation"><code class="name flex">
+<span>def <span class="ident">setMaxRotation</span></span>(<span>self, rotationSpeed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to the robot which sets maximal rotation speed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>rotationSpeed</code></strong></dt>
+<dd>Maximal robot rotation speed [%]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def setMaxRotation(self, rotationSpeed: int):
+    &#34;&#34;&#34;
+    Sends command to the robot which sets maximal rotation speed.
+
+    Args:
+        rotationSpeed: Maximal robot rotation speed [%]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [10, 100]  # [%]
+
+    self.__sendCommand(&#39;setMaxRotation&#39;, rotationSpeed, firstArgLimits=firstArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.setMaxSpeed"><code class="name flex">
+<span>def <span class="ident">setMaxSpeed</span></span>(<span>self, translationSpeed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to the robot which sets maximal translation speed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>translationSpeed</code></strong></dt>
+<dd>Maximal robot translation speed [%]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def setMaxSpeed(self, translationSpeed: int):
+    &#34;&#34;&#34;
+    Sends command to the robot which sets maximal translation speed.
+
+    Args:
+        translationSpeed: Maximal robot translation speed [%]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [10, 100]  # [%]
+
+    self.__sendCommand(&#39;setMaxSpeed&#39;, translationSpeed, firstArgLimits=firstArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.setMinDistance"><code class="name flex">
+<span>def <span class="ident">setMinDistance</span></span>(<span>self, distance)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to the robot which sets minimal allowed distance between robot and obstacle.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>distance</code></strong></dt>
+<dd>Minimal distance between the robot and obstacle [cm]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def setMinDistance(self, distance: int):
+    &#34;&#34;&#34;
+    Sends command to the robot which sets minimal allowed distance between robot and obstacle.
+
+    Args:
+        distance: Minimal distance between the robot and obstacle [cm]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [0, 50]  # [cm]
+
+    self.__sendCommand(&#39;setMinDistance&#39;, distance, firstArgLimits=firstArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.startReceivingRobotStatus"><code class="name flex">
+<span>def <span class="ident">startReceivingRobotStatus</span></span>(<span>self, printMessages=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>printMessages</code></strong></dt>
+<dd>True if internal status values are to be printed in console, false otherwise</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def startReceivingRobotStatus(self, printMessages: bool = False):
+    &#34;&#34;&#34;
+    Starts receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+    Args:
+        printMessages: True if internal status values are to be printed in console, false otherwise
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.sendInfoOn()
+    time.sleep(0.2)
+
+    self.statusWorker = StatusMessageWorker(self, printMessages)
+    self.statusWorker.daemon = True
+    self.statusWorker.start()</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to stop the robot in the current execution.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stop(self):
+    &#34;&#34;&#34;
+    Sends command to stop the robot in the current execution.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;stop&#39;)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.stopReceivingRobotStatus"><code class="name flex">
+<span>def <span class="ident">stopReceivingRobotStatus</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stopReceivingRobotStatus(self):
+    &#34;&#34;&#34;
+    Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.sendInfoOff()
+    time.sleep(0.2)
+
+    self.statusWorker.stop()
+    self.statusWorker.join()</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.translate"><code class="name flex">
+<span>def <span class="ident">translate</span></span>(<span>self, path, speed)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends "translate" command to the robot with defined path and translation speed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path</code></strong></dt>
+<dd>Length for robot to travel [cm]</dd>
+<dt><strong><code>speed</code></strong></dt>
+<dd>Translation speed [%]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def translate(self, path: int, speed: int):
+    &#34;&#34;&#34;
+    Sends &#34;translate&#34; command to the robot with defined path and translation speed.
+
+    Args:
+        path: Length for robot to travel [cm]
+        speed: Translation speed [%]
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    firstArgLimits = [-100, 100]  # [cm]
+    secondArgLimits = [10, 100]  # [%]
+
+    self.__sendCommand(&#39;translate&#39;, path, speed, firstArgLimits, secondArgLimits)</code></pre>
+</details>
+</dd>
+<dt id="emir.Emir.turnOff"><code class="name flex">
+<span>def <span class="ident">turnOff</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Sends command to turn off the robot.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def turnOff(self):
+    &#34;&#34;&#34;
+    Sends command to turn off the robot.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.__sendCommand(&#39;turnOff&#39;)
+    self.sock.close()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="emir.StatusMessageWorker"><code class="flex name class">
+<span>class <span class="ident">StatusMessageWorker</span></span>
+<span>(</span><span><small>ancestors:</small> threading.Thread)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Class that represents a thread of control.
+Deals with receiving and parsing of robot status message and updating internal robot state variables.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class StatusMessageWorker(threading.Thread):
+    &#34;&#34;&#34;
+    Class that represents a thread of control.
+    Deals with receiving and parsing of robot status message and updating internal robot state variables.
+    &#34;&#34;&#34;
+
+    def __init__(self, robot: Emir, printMessages: bool):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+            printMessages: True if internal status values are to be printed in console, false otherwise
+        &#34;&#34;&#34;
+        threading.Thread.__init__(self)
+        self.robot = robot
+        self.printMessages = printMessages
+        self.stop = threading.Event()
+
+    def stop(self):
+        &#34;&#34;&#34;
+        Signals an event which the main thread is waiting for.
+        Used to stop the status message worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.stop.set()
+
+    def stopped(self):
+        &#34;&#34;&#34;
+        Indicates that we want to exit the status message worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        return self.stop.isSet()
+
+    def run(self):
+        &#34;&#34;&#34;
+        Method representing the thread&#39;s activity.
+        Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        while True:
+            if self.stopped():
+                print(&#34;Thread closed.&#34;)
+                return
+            try:
+                self.robot.getRobotStatus()
+                if self.printMessages:
+                    self.robot.printStatusMessageValues()
+                time.sleep(0.2)  # Refresh rate is ~5 Hz
+            except:
+                print(&#34;Error occurred when getting robot status message!&#34;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="emir.StatusMessageWorker.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, robot, printMessages)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructor</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>robot</code></strong></dt>
+<dd>Instance of Emir class</dd>
+<dt><strong><code>printMessages</code></strong></dt>
+<dd>True if internal status values are to be printed in console, false otherwise</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, robot: Emir, printMessages: bool):
+    &#34;&#34;&#34;
+    Constructor
+
+    Args:
+        robot: Instance of Emir class
+        printMessages: True if internal status values are to be printed in console, false otherwise
+    &#34;&#34;&#34;
+    threading.Thread.__init__(self)
+    self.robot = robot
+    self.printMessages = printMessages
+    self.stop = threading.Event()</code></pre>
+</details>
+</dd>
+<dt id="emir.StatusMessageWorker.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Method representing the thread's activity.
+Charged with receiving and parsing of the robot status message and updating robot internal state variables.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def run(self):
+    &#34;&#34;&#34;
+    Method representing the thread&#39;s activity.
+    Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    while True:
+        if self.stopped():
+            print(&#34;Thread closed.&#34;)
+            return
+        try:
+            self.robot.getRobotStatus()
+            if self.printMessages:
+                self.robot.printStatusMessageValues()
+            time.sleep(0.2)  # Refresh rate is ~5 Hz
+        except:
+            print(&#34;Error occurred when getting robot status message!&#34;)</code></pre>
+</details>
+</dd>
+<dt id="emir.StatusMessageWorker.stop"><code class="name flex">
+<span>def <span class="ident">stop</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Signals an event which the main thread is waiting for.
+Used to stop the status message worker thread.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stop(self):
+    &#34;&#34;&#34;
+    Signals an event which the main thread is waiting for.
+    Used to stop the status message worker thread.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    self.stop.set()</code></pre>
+</details>
+</dd>
+<dt id="emir.StatusMessageWorker.stopped"><code class="name flex">
+<span>def <span class="ident">stopped</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Indicates that we want to exit the status message worker thread.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stopped(self):
+    &#34;&#34;&#34;
+    Indicates that we want to exit the status message worker thread.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    return self.stop.isSet()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="emir.Emir" href="#emir.Emir">Emir</a></code></h4>
+<ul class="">
+<li><code><a title="emir.Emir.__init__" href="#emir.Emir.__init__">__init__</a></code></li>
+<li><code><a title="emir.Emir.beep" href="#emir.Emir.beep">beep</a></code></li>
+<li><code><a title="emir.Emir.clipValue" href="#emir.Emir.clipValue">clipValue</a></code></li>
+<li><code><a title="emir.Emir.connect" href="#emir.Emir.connect">connect</a></code></li>
+<li><code><a title="emir.Emir.getMax8bitIntegerValue" href="#emir.Emir.getMax8bitIntegerValue">getMax8bitIntegerValue</a></code></li>
+<li><code><a title="emir.Emir.getRobotStatus" href="#emir.Emir.getRobotStatus">getRobotStatus</a></code></li>
+<li><code><a title="emir.Emir.getTwosComplement8bit" href="#emir.Emir.getTwosComplement8bit">getTwosComplement8bit</a></code></li>
+<li><code><a title="emir.Emir.move" href="#emir.Emir.move">move</a></code></li>
+<li><code><a title="emir.Emir.printStatusMessageValues" href="#emir.Emir.printStatusMessageValues">printStatusMessageValues</a></code></li>
+<li><code><a title="emir.Emir.resetAzimuth" href="#emir.Emir.resetAzimuth">resetAzimuth</a></code></li>
+<li><code><a title="emir.Emir.resetCounters" href="#emir.Emir.resetCounters">resetCounters</a></code></li>
+<li><code><a title="emir.Emir.rotate" href="#emir.Emir.rotate">rotate</a></code></li>
+<li><code><a title="emir.Emir.sendInfoEEPROM" href="#emir.Emir.sendInfoEEPROM">sendInfoEEPROM</a></code></li>
+<li><code><a title="emir.Emir.sendInfoOff" href="#emir.Emir.sendInfoOff">sendInfoOff</a></code></li>
+<li><code><a title="emir.Emir.sendInfoOn" href="#emir.Emir.sendInfoOn">sendInfoOn</a></code></li>
+<li><code><a title="emir.Emir.sensorsOff" href="#emir.Emir.sensorsOff">sensorsOff</a></code></li>
+<li><code><a title="emir.Emir.sensorsOn" href="#emir.Emir.sensorsOn">sensorsOn</a></code></li>
+<li><code><a title="emir.Emir.setDigitalOutput" href="#emir.Emir.setDigitalOutput">setDigitalOutput</a></code></li>
+<li><code><a title="emir.Emir.setMaxRotation" href="#emir.Emir.setMaxRotation">setMaxRotation</a></code></li>
+<li><code><a title="emir.Emir.setMaxSpeed" href="#emir.Emir.setMaxSpeed">setMaxSpeed</a></code></li>
+<li><code><a title="emir.Emir.setMinDistance" href="#emir.Emir.setMinDistance">setMinDistance</a></code></li>
+<li><code><a title="emir.Emir.startReceivingRobotStatus" href="#emir.Emir.startReceivingRobotStatus">startReceivingRobotStatus</a></code></li>
+<li><code><a title="emir.Emir.stop" href="#emir.Emir.stop">stop</a></code></li>
+<li><code><a title="emir.Emir.stopReceivingRobotStatus" href="#emir.Emir.stopReceivingRobotStatus">stopReceivingRobotStatus</a></code></li>
+<li><code><a title="emir.Emir.stringOfHexToListOfDecIntegers" href="#emir.Emir.stringOfHexToListOfDecIntegers">stringOfHexToListOfDecIntegers</a></code></li>
+<li><code><a title="emir.Emir.translate" href="#emir.Emir.translate">translate</a></code></li>
+<li><code><a title="emir.Emir.turnOff" href="#emir.Emir.turnOff">turnOff</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="emir.StatusMessageWorker" href="#emir.StatusMessageWorker">StatusMessageWorker</a></code></h4>
+<ul class="">
+<li><code><a title="emir.StatusMessageWorker.__init__" href="#emir.StatusMessageWorker.__init__">__init__</a></code></li>
+<li><code><a title="emir.StatusMessageWorker.run" href="#emir.StatusMessageWorker.run">run</a></code></li>
+<li><code><a title="emir.StatusMessageWorker.stop" href="#emir.StatusMessageWorker.stop">stop</a></code></li>
+<li><code><a title="emir.StatusMessageWorker.stopped" href="#emir.StatusMessageWorker.stopped">stopped</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.3</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
