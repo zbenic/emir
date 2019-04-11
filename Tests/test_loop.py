@@ -14,14 +14,18 @@ def main():
     red.setMaxRotation(50)
     time.sleep(delay)
 
-    red.setMinDistance(20)
-    time.sleep(delay)
-
     for counter in range(0, 100):
-        red.move(50, 0)
+        red.move(100, 0)
         time.sleep(delay)
 
+    red.stopReceivingRobotStatus()
+    time.sleep(delay)
+
+    red.beep(1)
+    time.sleep(delay)
+
     red.stop()
+    time.sleep(delay)
     red.turnOff()
 
 if __name__ == '__main__':
