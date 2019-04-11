@@ -17,7 +17,7 @@ class Emir:
 
     def __init__(self, name: str, numOfProximitySensors: int=6):
         """
-        Constructor
+        Constructor.
 
         Args:
             name: Name of the robot instance
@@ -150,7 +150,7 @@ class Emir:
     def clipValue(value, minValue, maxValue):
         """
         Static method.
-        Returns value clipped by the min and max limits
+        Returns value clipped by the min and max limits.
 
         Args:
             value: Input value
@@ -167,7 +167,7 @@ class Emir:
     def getMax8bitIntegerValue():
         """
         Static method.
-        Returns max. 8bit integer number.
+        Returns maximal 8bit integer number.
 
         Returns:
             Maximal 8 bit integer number

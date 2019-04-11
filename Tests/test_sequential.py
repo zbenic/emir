@@ -1,8 +1,8 @@
-import emir
+import emir.core as emir
 import time
 
 def main():
-    delay = 1
+    delay = 0.5
 
     red = emir.Emir("eMIR-Red")
     red.connect()
@@ -14,9 +14,6 @@ def main():
     red.setMaxRotation(50)
     time.sleep(delay)
 
-    red.setMinDistance(20)
-    time.sleep(delay)
-
     red.move(100, 0)
     time.sleep(delay)
 
@@ -26,7 +23,7 @@ def main():
     red.rotate(-10, 50)
     time.sleep(delay)
 
-    red.move(0, 100)
+    red.move(-100, 50)
     time.sleep(delay)
 
     red.stopReceivingRobotStatus()

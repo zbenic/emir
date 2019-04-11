@@ -1,4 +1,4 @@
-import emir
+import emir.core as emir
 import time
 import keyboard
 
