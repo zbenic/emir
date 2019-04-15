@@ -1,0 +1,1 @@
+Class Emir used for controlling the FMENA eMIR robot.
