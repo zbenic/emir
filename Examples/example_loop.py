@@ -14,12 +14,18 @@ def main():
     red.setMaxRotation(50)
     time.sleep(delay)
 
+    red.startSendingMoveCommands()
+
     for counter in range(0, 100):
-        red.move(100, 0)
-        time.sleep(delay)
+        red.setSpeed = 100
+        red.setRotation = 100
 
     red.stopReceivingRobotStatus()
-    time.sleep(delay)
+
+    red.setSpeed = 0
+    red.setRotation = 0
+
+    red.stopSendingMoveCommands()
 
     red.beep(1)
     time.sleep(delay)

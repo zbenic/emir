@@ -65,9 +65,10 @@ class Emir:
         self.angle = None
         self.update = False
         self.setSpeed = 0
-        self.SetRotation = 0
+        self.setRotation = 0
         self.badCheckSum = 0
         self.statusWorker = None
+        self.commandWorker = None
 
     def __getRobotAddress(self):
         """
@@ -446,6 +447,29 @@ class Emir:
         self.statusWorker.stop()
         self.statusWorker.join()
 
+    def startSendingMoveCommands(self):
+        """
+        Starts periodically sending the "move" command to the robot.
+
+        Returns:
+            N/A
+        """
+
+        self.commandWorker = CommandSenderWorker(self)
+        self.commandWorker.daemon = True
+        self.commandWorker.start()
+
+    def stopSendingMoveCommands(self):
+        """
+        Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+
+        Returns:
+            N/A
+        """
+
+        self.commandWorker.stop()
+        self.commandWorker.join()
+
     def stop(self):
         """
         Sends command to stop the robot in the current execution.
@@ -753,3 +777,60 @@ class StatusMessageWorker(threading.Thread):
                 time.sleep(0.2)  # Refresh rate is ~5 Hz
             except:
                 print("Error occurred when getting robot status message!")
+
+class CommandSenderWorker(threading.Thread):
+    """
+    Class that represents a thread of control.
+    Deals with receiving and parsing of robot status message and updating internal robot state variables.
+    """
+
+    def __init__(self, robot: Emir):
+        """
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+            printMessages: True if internal status values are to be printed in console, false otherwise
+        """
+        threading.Thread.__init__(self)
+        self.robot = robot
+        self.stop = threading.Event()
+
+    def stop(self):
+        """
+        Signals an event which the main thread is waiting for.
+        Used to stop the status message worker thread.
+
+        Returns:
+            N/A
+        """
+        self.stop.set()
+
+    def stopped(self):
+        """
+        Indicates that we want to exit the status message worker thread.
+
+        Returns:
+            N/A
+        """
+        return self.stop.isSet()
+
+    def run(self):
+        """
+        Method representing the thread's activity.
+        Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+
+        Returns:
+            N/A
+        """
+        while True:
+            if self.stopped():
+                print("Thread closed.")
+                return
+            try:
+                translationSpeed = self.robot.setSpeed
+                rotationSpeed = self.robot.setRotation
+                self.robot.move(translationSpeed, rotationSpeed)
+                time.sleep(0.2)  # Command send rate is ~5 Hz
+            except:
+                print("Error occurred when sending the command!")

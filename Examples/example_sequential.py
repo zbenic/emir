@@ -14,17 +14,17 @@ def main():
     red.setMaxRotation(50)
     time.sleep(delay)
 
-    red.move(100, 0)
-    time.sleep(delay)
+    red.translate(50, 100)
+    time.sleep(10)
 
     red.rotate(10, 100)
-    time.sleep(delay)
+    time.sleep(3)
 
     red.rotate(-10, 50)
-    time.sleep(delay)
+    time.sleep(3)
 
-    red.move(-100, 50)
-    time.sleep(delay)
+    red.translate(-50, 100)
+    time.sleep(10)
 
     red.stopReceivingRobotStatus()
     time.sleep(delay)
