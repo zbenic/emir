@@ -444,7 +444,7 @@ class Emir:
         self.sendInfoOff()
         time.sleep(0.2)
 
-        self.statusWorker.stop()
+        self.statusWorker.stopit()
         self.statusWorker.join()
 
     def startSendingMoveCommands(self):
@@ -467,7 +467,7 @@ class Emir:
             N/A
         """
 
-        self.commandWorker.stop()
+        self.commandWorker.stopit()
         self.commandWorker.join()
 
     def stop(self):
@@ -739,7 +739,7 @@ class StatusMessageWorker(threading.Thread):
         self.printMessages = printMessages
         self.stop = threading.Event()
 
-    def stop(self):
+    def stopit(self):
         """
         Signals an event which the main thread is waiting for.
         Used to stop the status message worker thread.
@@ -796,7 +796,7 @@ class CommandSenderWorker(threading.Thread):
         self.robot = robot
         self.stop = threading.Event()
 
-    def stop(self):
+    def stopit(self):
         """
         Signals an event which the main thread is waiting for.
         Used to stop the status message worker thread.
