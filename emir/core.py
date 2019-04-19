@@ -469,6 +469,7 @@ class Emir:
 
         self.commandWorker.stopit()
         self.commandWorker.join()
+        time.sleep(0.1)
 
     def stop(self):
         """

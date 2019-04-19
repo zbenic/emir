@@ -6,7 +6,7 @@ def main():
 
     red = emir.Emir("eMIR-Red")
     red.connect()
-    red.startReceivingRobotStatus(True)
+    red.startReceivingRobotStatus(False)
 
     red.setMaxSpeed(50)
     time.sleep(delay)
@@ -14,17 +14,19 @@ def main():
     red.setMaxRotation(50)
     time.sleep(delay)
 
+    print(str(red.workMode))
+
     red.translate(50, 100)
-    time.sleep(10)
+    time.sleep(6)
 
-    red.rotate(10, 100)
-    time.sleep(3)
+    red.rotate(20, 100)
+    time.sleep(2)
 
-    red.rotate(-10, 50)
-    time.sleep(3)
+    red.rotate(-20, 50)
+    time.sleep(2)
 
     red.translate(-50, 100)
-    time.sleep(10)
+    time.sleep(6)
 
     red.stopReceivingRobotStatus()
     time.sleep(delay)
@@ -34,6 +36,7 @@ def main():
 
     red.stop()
     time.sleep(delay)
+    print(str(red.workMode))
     red.turnOff()
 
 
