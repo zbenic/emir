@@ -8,7 +8,7 @@ def main():
     red.connect()
     red.startReceivingRobotStatus(False)
 
-    red.setMaxSpeed(100)
+    red.setMaxSpeed(50)
     time.sleep(delay)
 
     red.setMaxRotation(50)
@@ -25,14 +25,7 @@ def main():
             red.setRotation = 0
             break
 
-    # time.sleep(10)
-
     red.stopReceivingRobotStatus()
-
-    red.setSpeed = 0
-    red.setRotation = 0
-    time.sleep(delay)
-
     red.stopSendingMoveCommands()
 
     red.beep(1)
@@ -40,7 +33,7 @@ def main():
 
     red.stop()
     time.sleep(delay)
-    # red.turnOff()
+    red.turnOff()
 
 if __name__ == '__main__':
     main()

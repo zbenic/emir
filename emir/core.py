@@ -461,7 +461,7 @@ class Emir:
 
     def stopSendingMoveCommands(self):
         """
-        Stops receiving robot status messages and refreshing robot internal status variables in parallel thread.
+        Stops sending the "move" command periodically to the robot.
 
         Returns:
             N/A
@@ -782,7 +782,7 @@ class StatusMessageWorker(threading.Thread):
 class CommandSenderWorker(threading.Thread):
     """
     Class that represents a thread of control.
-    Deals with receiving and parsing of robot status message and updating internal robot state variables.
+    Deals with sending the "move" command periodically to the robot.
     """
 
     def __init__(self, robot: Emir):
@@ -791,7 +791,6 @@ class CommandSenderWorker(threading.Thread):
 
         Args:
             robot: Instance of Emir class
-            printMessages: True if internal status values are to be printed in console, false otherwise
         """
         threading.Thread.__init__(self)
         self.robot = robot
@@ -800,7 +799,7 @@ class CommandSenderWorker(threading.Thread):
     def stopit(self):
         """
         Signals an event which the main thread is waiting for.
-        Used to stop the status message worker thread.
+        Used to stop the command sender worker thread.
 
         Returns:
             N/A
@@ -809,7 +808,7 @@ class CommandSenderWorker(threading.Thread):
 
     def stopped(self):
         """
-        Indicates that we want to exit the status message worker thread.
+        Indicates that we want to exit the command sender worker thread.
 
         Returns:
             N/A
@@ -819,7 +818,7 @@ class CommandSenderWorker(threading.Thread):
     def run(self):
         """
         Method representing the thread's activity.
-        Charged with receiving and parsing of the robot status message and updating robot internal state variables.
+        Charged with sending the "move" command periodically to the robot.
 
         Returns:
             N/A
