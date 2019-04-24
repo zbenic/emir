@@ -16,13 +16,12 @@ def main():
 
     red.startSendingMoveCommands()
 
-    red.setSpeed = 100
+    red.setSpeed = 25
     red.setRotation = 0
 
     while True:
         if red.proximitySensors[0] < 25:
             red.setSpeed = 0
-            red.setRotation = 0
             break
 
     red.stopReceivingRobotStatus()
