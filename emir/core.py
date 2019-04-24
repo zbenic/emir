@@ -49,7 +49,7 @@ class Emir:
                          'resetCounters':            '15',
                          'turnOff':                  'FF'}
         self.statusMessage = None
-        self.proximitySensors = [0] * numOfProximitySensors
+        self.proximitySensors = [99] * numOfProximitySensors
         self.battery = 0
         self.lowBattery = False
         self.chargeVoltage = 0
