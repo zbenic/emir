@@ -24,6 +24,8 @@ def main():
             red.setSpeed = 0
             break
 
+    time.sleep(0.5)
+
     red.stopReceivingRobotStatus()
     red.stopSendingMoveCommands()
 
