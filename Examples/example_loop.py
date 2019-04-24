@@ -22,6 +22,7 @@ def main():
     while True:
         if red.proximitySensors[0] < 25:
             red.setSpeed = 0
+            print(str(time.time()) + "-stop command")
             break
 
     time.sleep(0.5)

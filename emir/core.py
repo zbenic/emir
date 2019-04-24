@@ -409,10 +409,11 @@ class Emir:
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            # warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")  # For debugging purposes
+            warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")  # For debugging purposes
             self.update = False
         else:
             self.__parseStatusMessage()
+            print(str(time.time()) + "-update")
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
