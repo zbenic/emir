@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.3" />
-<title>emir API documentation</title>
+<title>core API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -17,7 +17,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>emir</code> module</h1>
+<h1 class="title"><code>core</code> module</h1>
 </header>
 <section id="section-intro">
 <details class="source">
@@ -41,7 +41,7 @@ class Emir:
 
     def __init__(self, name: str, numOfProximitySensors: int=6):
         &#34;&#34;&#34;
-        Constructor
+        Constructor.
 
         Args:
             name: Name of the robot instance
@@ -73,7 +73,7 @@ class Emir:
                          &#39;resetCounters&#39;:            &#39;15&#39;,
                          &#39;turnOff&#39;:                  &#39;FF&#39;}
         self.statusMessage = None
-        self.proximitySensors = [0] * numOfProximitySensors
+        self.proximitySensors = [99] * numOfProximitySensors
         self.battery = 0
         self.lowBattery = False
         self.chargeVoltage = 0
@@ -89,9 +89,10 @@ class Emir:
         self.angle = None
         self.update = False
         self.setSpeed = 0
-        self.SetRotation = 0
+        self.setRotation = 0
         self.badCheckSum = 0
         self.statusWorker = None
+        self.commandWorker = None
 
     def __getRobotAddress(self):
         &#34;&#34;&#34;
@@ -174,7 +175,7 @@ class Emir:
     def clipValue(value, minValue, maxValue):
         &#34;&#34;&#34;
         Static method.
-        Returns value clipped by the min and max limits
+        Returns value clipped by the min and max limits.
 
         Args:
             value: Input value
@@ -191,7 +192,7 @@ class Emir:
     def getMax8bitIntegerValue():
         &#34;&#34;&#34;
         Static method.
-        Returns max. 8bit integer number.
+        Returns maximal 8bit integer number.
 
         Returns:
             Maximal 8 bit integer number
@@ -432,10 +433,11 @@ class Emir:
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
             self.update = False
         else:
             self.__parseStatusMessage()
+            print(str(time.time()) + &#34;-update&#34;)
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
@@ -467,8 +469,32 @@ class Emir:
         self.sendInfoOff()
         time.sleep(0.2)
 
-        self.statusWorker.stop()
+        self.statusWorker.stopit()
         self.statusWorker.join()
+
+    def startSendingMoveCommands(self):
+        &#34;&#34;&#34;
+        Starts periodically sending the &#34;move&#34; command to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.commandWorker = CommandSenderWorker(self)
+        self.commandWorker.daemon = True
+        self.commandWorker.start()
+
+    def stopSendingMoveCommands(self):
+        &#34;&#34;&#34;
+        Stops sending the &#34;move&#34; command periodically to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.commandWorker.stopit()
+        self.commandWorker.join()
+        time.sleep(0.1)
 
     def stop(self):
         &#34;&#34;&#34;
@@ -739,7 +765,7 @@ class StatusMessageWorker(threading.Thread):
         self.printMessages = printMessages
         self.stop = threading.Event()
 
-    def stop(self):
+    def stopit(self):
         &#34;&#34;&#34;
         Signals an event which the main thread is waiting for.
         Used to stop the status message worker thread.
@@ -776,7 +802,63 @@ class StatusMessageWorker(threading.Thread):
                     self.robot.printStatusMessageValues()
                 time.sleep(0.2)  # Refresh rate is ~5 Hz
             except:
-                print(&#34;Error occurred when getting robot status message!&#34;)</code></pre>
+                print(&#34;Error occurred when getting robot status message!&#34;)
+
+class CommandSenderWorker(threading.Thread):
+    &#34;&#34;&#34;
+    Class that represents a thread of control.
+    Deals with sending the &#34;move&#34; command periodically to the robot.
+    &#34;&#34;&#34;
+
+    def __init__(self, robot: Emir):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+        &#34;&#34;&#34;
+        threading.Thread.__init__(self)
+        self.robot = robot
+        self.stop = threading.Event()
+
+    def stopit(self):
+        &#34;&#34;&#34;
+        Signals an event which the main thread is waiting for.
+        Used to stop the command sender worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.stop.set()
+
+    def stopped(self):
+        &#34;&#34;&#34;
+        Indicates that we want to exit the command sender worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        return self.stop.isSet()
+
+    def run(self):
+        &#34;&#34;&#34;
+        Method representing the thread&#39;s activity.
+        Charged with sending the &#34;move&#34; command periodically to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        while True:
+            if self.stopped():
+                print(&#34;Thread closed.&#34;)
+                return
+            try:
+                translationSpeed = self.robot.setSpeed
+                rotationSpeed = self.robot.setRotation
+                self.robot.move(translationSpeed, rotationSpeed)
+                time.sleep(0.2)  # Command send rate is ~5 Hz
+            except:
+                print(&#34;Error occurred when sending the command!&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -788,7 +870,171 @@ class StatusMessageWorker(threading.Thread):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="emir.Emir"><code class="flex name class">
+<dt id="core.CommandSenderWorker"><code class="flex name class">
+<span>class <span class="ident">CommandSenderWorker</span></span>
+<span>(</span><span><small>ancestors:</small> threading.Thread)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Class that represents a thread of control.
+Deals with sending the "move" command periodically to the robot.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class CommandSenderWorker(threading.Thread):
+    &#34;&#34;&#34;
+    Class that represents a thread of control.
+    Deals with sending the &#34;move&#34; command periodically to the robot.
+    &#34;&#34;&#34;
+
+    def __init__(self, robot: Emir):
+        &#34;&#34;&#34;
+        Constructor
+
+        Args:
+            robot: Instance of Emir class
+        &#34;&#34;&#34;
+        threading.Thread.__init__(self)
+        self.robot = robot
+        self.stop = threading.Event()
+
+    def stopit(self):
+        &#34;&#34;&#34;
+        Signals an event which the main thread is waiting for.
+        Used to stop the command sender worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        self.stop.set()
+
+    def stopped(self):
+        &#34;&#34;&#34;
+        Indicates that we want to exit the command sender worker thread.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        return self.stop.isSet()
+
+    def run(self):
+        &#34;&#34;&#34;
+        Method representing the thread&#39;s activity.
+        Charged with sending the &#34;move&#34; command periodically to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+        while True:
+            if self.stopped():
+                print(&#34;Thread closed.&#34;)
+                return
+            try:
+                translationSpeed = self.robot.setSpeed
+                rotationSpeed = self.robot.setRotation
+                self.robot.move(translationSpeed, rotationSpeed)
+                time.sleep(0.2)  # Command send rate is ~5 Hz
+            except:
+                print(&#34;Error occurred when sending the command!&#34;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="core.CommandSenderWorker.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, robot)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructor</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>robot</code></strong></dt>
+<dd>Instance of Emir class</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, robot: Emir):
+    &#34;&#34;&#34;
+    Constructor
+
+    Args:
+        robot: Instance of Emir class
+    &#34;&#34;&#34;
+    threading.Thread.__init__(self)
+    self.robot = robot
+    self.stop = threading.Event()</code></pre>
+</details>
+</dd>
+<dt id="core.CommandSenderWorker.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Method representing the thread's activity.
+Charged with sending the "move" command periodically to the robot.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def run(self):
+    &#34;&#34;&#34;
+    Method representing the thread&#39;s activity.
+    Charged with sending the &#34;move&#34; command periodically to the robot.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    while True:
+        if self.stopped():
+            print(&#34;Thread closed.&#34;)
+            return
+        try:
+            translationSpeed = self.robot.setSpeed
+            rotationSpeed = self.robot.setRotation
+            self.robot.move(translationSpeed, rotationSpeed)
+            time.sleep(0.2)  # Command send rate is ~5 Hz
+        except:
+            print(&#34;Error occurred when sending the command!&#34;)</code></pre>
+</details>
+</dd>
+<dt id="core.CommandSenderWorker.stopit"><code class="name flex">
+<span>def <span class="ident">stopit</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Signals an event which the main thread is waiting for.
+Used to stop the command sender worker thread.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stopit(self):
+    &#34;&#34;&#34;
+    Signals an event which the main thread is waiting for.
+    Used to stop the command sender worker thread.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    self.stop.set()</code></pre>
+</details>
+</dd>
+<dt id="core.CommandSenderWorker.stopped"><code class="name flex">
+<span>def <span class="ident">stopped</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Indicates that we want to exit the command sender worker thread.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stopped(self):
+    &#34;&#34;&#34;
+    Indicates that we want to exit the command sender worker thread.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+    return self.stop.isSet()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="core.Emir"><code class="flex name class">
 <span>class <span class="ident">Emir</span></span>
 </code></dt>
 <dd>
@@ -806,7 +1052,7 @@ Implementation of parsing of the return status message can also be used.</p></se
 
     def __init__(self, name: str, numOfProximitySensors: int=6):
         &#34;&#34;&#34;
-        Constructor
+        Constructor.
 
         Args:
             name: Name of the robot instance
@@ -838,7 +1084,7 @@ Implementation of parsing of the return status message can also be used.</p></se
                          &#39;resetCounters&#39;:            &#39;15&#39;,
                          &#39;turnOff&#39;:                  &#39;FF&#39;}
         self.statusMessage = None
-        self.proximitySensors = [0] * numOfProximitySensors
+        self.proximitySensors = [99] * numOfProximitySensors
         self.battery = 0
         self.lowBattery = False
         self.chargeVoltage = 0
@@ -854,9 +1100,10 @@ Implementation of parsing of the return status message can also be used.</p></se
         self.angle = None
         self.update = False
         self.setSpeed = 0
-        self.SetRotation = 0
+        self.setRotation = 0
         self.badCheckSum = 0
         self.statusWorker = None
+        self.commandWorker = None
 
     def __getRobotAddress(self):
         &#34;&#34;&#34;
@@ -939,7 +1186,7 @@ Implementation of parsing of the return status message can also be used.</p></se
     def clipValue(value, minValue, maxValue):
         &#34;&#34;&#34;
         Static method.
-        Returns value clipped by the min and max limits
+        Returns value clipped by the min and max limits.
 
         Args:
             value: Input value
@@ -956,7 +1203,7 @@ Implementation of parsing of the return status message can also be used.</p></se
     def getMax8bitIntegerValue():
         &#34;&#34;&#34;
         Static method.
-        Returns max. 8bit integer number.
+        Returns maximal 8bit integer number.
 
         Returns:
             Maximal 8 bit integer number
@@ -1197,10 +1444,11 @@ Implementation of parsing of the return status message can also be used.</p></se
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
             self.update = False
         else:
             self.__parseStatusMessage()
+            print(str(time.time()) + &#34;-update&#34;)
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
@@ -1232,8 +1480,32 @@ Implementation of parsing of the return status message can also be used.</p></se
         self.sendInfoOff()
         time.sleep(0.2)
 
-        self.statusWorker.stop()
+        self.statusWorker.stopit()
         self.statusWorker.join()
+
+    def startSendingMoveCommands(self):
+        &#34;&#34;&#34;
+        Starts periodically sending the &#34;move&#34; command to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.commandWorker = CommandSenderWorker(self)
+        self.commandWorker.daemon = True
+        self.commandWorker.start()
+
+    def stopSendingMoveCommands(self):
+        &#34;&#34;&#34;
+        Stops sending the &#34;move&#34; command periodically to the robot.
+
+        Returns:
+            N/A
+        &#34;&#34;&#34;
+
+        self.commandWorker.stopit()
+        self.commandWorker.join()
+        time.sleep(0.1)
 
     def stop(self):
         &#34;&#34;&#34;
@@ -1486,12 +1758,12 @@ Implementation of parsing of the return status message can also be used.</p></se
 </details>
 <h3>Static methods</h3>
 <dl>
-<dt id="emir.Emir.clipValue"><code class="name flex">
+<dt id="core.Emir.clipValue"><code class="name flex">
 <span>def <span class="ident">clipValue</span></span>(<span>value, minValue, maxValue)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Static method.
-Returns value clipped by the min and max limits</p>
+Returns value clipped by the min and max limits.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>value</code></strong></dt>
@@ -1509,7 +1781,7 @@ Returns value clipped by the min and max limits</p>
 def clipValue(value, minValue, maxValue):
     &#34;&#34;&#34;
     Static method.
-    Returns value clipped by the min and max limits
+    Returns value clipped by the min and max limits.
 
     Args:
         value: Input value
@@ -1523,12 +1795,12 @@ def clipValue(value, minValue, maxValue):
     return max(minValue, min(value, maxValue))</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.getMax8bitIntegerValue"><code class="name flex">
+<dt id="core.Emir.getMax8bitIntegerValue"><code class="name flex">
 <span>def <span class="ident">getMax8bitIntegerValue</span></span>(<span>)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Static method.
-Returns max. 8bit integer number.</p>
+Returns maximal 8bit integer number.</p>
 <h2 id="returns">Returns</h2>
 <p>Maximal 8 bit integer number</p></section>
 <details class="source">
@@ -1537,7 +1809,7 @@ Returns max. 8bit integer number.</p>
 def getMax8bitIntegerValue():
     &#34;&#34;&#34;
     Static method.
-    Returns max. 8bit integer number.
+    Returns maximal 8bit integer number.
 
     Returns:
         Maximal 8 bit integer number
@@ -1546,7 +1818,7 @@ def getMax8bitIntegerValue():
     return 2**8 - 1</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.getTwosComplement8bit"><code class="name flex">
+<dt id="core.Emir.getTwosComplement8bit"><code class="name flex">
 <span>def <span class="ident">getTwosComplement8bit</span></span>(<span>decimalBaseInteger)</span>
 </code></dt>
 <dd>
@@ -1581,7 +1853,7 @@ def getTwosComplement8bit(decimalBaseInteger: int):
         return decimalBaseInteger if decimalBaseInteger &gt;= 0 else 256 + decimalBaseInteger</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.stringOfHexToListOfDecIntegers"><code class="name flex">
+<dt id="core.Emir.stringOfHexToListOfDecIntegers"><code class="name flex">
 <span>def <span class="ident">stringOfHexToListOfDecIntegers</span></span>(<span>string)</span>
 </code></dt>
 <dd>
@@ -1617,11 +1889,11 @@ def stringOfHexToListOfDecIntegers(string: str):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="emir.Emir.__init__"><code class="name flex">
+<dt id="core.Emir.__init__"><code class="name flex">
 <span>def <span class="ident">__init__</span></span>(<span>self, name, numOfProximitySensors=6)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Constructor</p>
+<section class="desc"><p>Constructor.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>name</code></strong></dt>
@@ -1633,7 +1905,7 @@ def stringOfHexToListOfDecIntegers(string: str):
 <summary>Source code</summary>
 <pre><code class="python">def __init__(self, name: str, numOfProximitySensors: int=6):
     &#34;&#34;&#34;
-    Constructor
+    Constructor.
 
     Args:
         name: Name of the robot instance
@@ -1665,7 +1937,7 @@ def stringOfHexToListOfDecIntegers(string: str):
                      &#39;resetCounters&#39;:            &#39;15&#39;,
                      &#39;turnOff&#39;:                  &#39;FF&#39;}
     self.statusMessage = None
-    self.proximitySensors = [0] * numOfProximitySensors
+    self.proximitySensors = [99] * numOfProximitySensors
     self.battery = 0
     self.lowBattery = False
     self.chargeVoltage = 0
@@ -1681,12 +1953,13 @@ def stringOfHexToListOfDecIntegers(string: str):
     self.angle = None
     self.update = False
     self.setSpeed = 0
-    self.SetRotation = 0
+    self.setRotation = 0
     self.badCheckSum = 0
-    self.statusWorker = None</code></pre>
+    self.statusWorker = None
+    self.commandWorker = None</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.beep"><code class="name flex">
+<dt id="core.Emir.beep"><code class="name flex">
 <span>def <span class="ident">beep</span></span>(<span>self, duration)</span>
 </code></dt>
 <dd>
@@ -1716,7 +1989,7 @@ def stringOfHexToListOfDecIntegers(string: str):
     self.__sendCommand(&#39;beep&#39;, duration, firstArgLimits=firstArgLimits, useTwosComplement=False)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.connect"><code class="name flex">
+<dt id="core.Emir.connect"><code class="name flex">
 <span>def <span class="ident">connect</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1750,7 +2023,7 @@ If unable to connect, program exits with -1.</p>
         exit(-1)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.getRobotStatus"><code class="name flex">
+<dt id="core.Emir.getRobotStatus"><code class="name flex">
 <span>def <span class="ident">getRobotStatus</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1819,14 +2092,15 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
     self.statusMessage = self.statusMessage[messageStart:messageEnd]
     if not self.statusMessage:
-        # warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+        warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
         self.update = False
     else:
         self.__parseStatusMessage()
+        print(str(time.time()) + &#34;-update&#34;)
         self.update = True</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.move"><code class="name flex">
+<dt id="core.Emir.move"><code class="name flex">
 <span>def <span class="ident">move</span></span>(<span>self, translationSpeed, rotationSpeed)</span>
 </code></dt>
 <dd>
@@ -1860,7 +2134,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;move&#39;, translationSpeed, rotationSpeed, firstArgLimits, secondArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.printStatusMessageValues"><code class="name flex">
+<dt id="core.Emir.printStatusMessageValues"><code class="name flex">
 <span>def <span class="ident">printStatusMessageValues</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1893,7 +2167,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     print(self.name + &#34; angle:&#34; + str(self.angle))</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.resetAzimuth"><code class="name flex">
+<dt id="core.Emir.resetAzimuth"><code class="name flex">
 <span>def <span class="ident">resetAzimuth</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1913,7 +2187,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;resetAzimuth&#39;)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.resetCounters"><code class="name flex">
+<dt id="core.Emir.resetCounters"><code class="name flex">
 <span>def <span class="ident">resetCounters</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1933,7 +2207,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;resetCounters&#39;)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.rotate"><code class="name flex">
+<dt id="core.Emir.rotate"><code class="name flex">
 <span>def <span class="ident">rotate</span></span>(<span>self, angle, speed)</span>
 </code></dt>
 <dd>
@@ -1969,7 +2243,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;rotate&#39;, angle, speed, firstArgLimits, secondArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.sendInfoEEPROM"><code class="name flex">
+<dt id="core.Emir.sendInfoEEPROM"><code class="name flex">
 <span>def <span class="ident">sendInfoEEPROM</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1989,7 +2263,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;sendInfoEEPROM&#39;, 240, useTwosComplement=False, useValueClipping=False)  # 240 is F0</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.sendInfoOff"><code class="name flex">
+<dt id="core.Emir.sendInfoOff"><code class="name flex">
 <span>def <span class="ident">sendInfoOff</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2009,7 +2283,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;sendInfoOff&#39;, 0, useValueClipping=False)  # 240 is F0</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.sendInfoOn"><code class="name flex">
+<dt id="core.Emir.sendInfoOn"><code class="name flex">
 <span>def <span class="ident">sendInfoOn</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2029,7 +2303,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;sendInfoOn&#39;, 1, useValueClipping=False)  # 240 is F0</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.sensorsOff"><code class="name flex">
+<dt id="core.Emir.sensorsOff"><code class="name flex">
 <span>def <span class="ident">sensorsOff</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2049,7 +2323,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;sensorsOff&#39;, 1, useValueClipping=False)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.sensorsOn"><code class="name flex">
+<dt id="core.Emir.sensorsOn"><code class="name flex">
 <span>def <span class="ident">sensorsOn</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2069,7 +2343,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;sensorsOn&#39;, 1, useValueClipping=False)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.setDigitalOutput"><code class="name flex">
+<dt id="core.Emir.setDigitalOutput"><code class="name flex">
 <span>def <span class="ident">setDigitalOutput</span></span>(<span>self, bitNumber, state)</span>
 </code></dt>
 <dd>
@@ -2107,7 +2381,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;setDigitalOutput&#39;, bitNumber, state, firstArgLimits, secondArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.setMaxRotation"><code class="name flex">
+<dt id="core.Emir.setMaxRotation"><code class="name flex">
 <span>def <span class="ident">setMaxRotation</span></span>(<span>self, rotationSpeed)</span>
 </code></dt>
 <dd>
@@ -2137,7 +2411,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;setMaxRotation&#39;, rotationSpeed, firstArgLimits=firstArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.setMaxSpeed"><code class="name flex">
+<dt id="core.Emir.setMaxSpeed"><code class="name flex">
 <span>def <span class="ident">setMaxSpeed</span></span>(<span>self, translationSpeed)</span>
 </code></dt>
 <dd>
@@ -2167,7 +2441,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;setMaxSpeed&#39;, translationSpeed, firstArgLimits=firstArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.setMinDistance"><code class="name flex">
+<dt id="core.Emir.setMinDistance"><code class="name flex">
 <span>def <span class="ident">setMinDistance</span></span>(<span>self, distance)</span>
 </code></dt>
 <dd>
@@ -2197,7 +2471,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;setMinDistance&#39;, distance, firstArgLimits=firstArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.startReceivingRobotStatus"><code class="name flex">
+<dt id="core.Emir.startReceivingRobotStatus"><code class="name flex">
 <span>def <span class="ident">startReceivingRobotStatus</span></span>(<span>self, printMessages=False)</span>
 </code></dt>
 <dd>
@@ -2230,7 +2504,29 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.statusWorker.start()</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.stop"><code class="name flex">
+<dt id="core.Emir.startSendingMoveCommands"><code class="name flex">
+<span>def <span class="ident">startSendingMoveCommands</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Starts periodically sending the "move" command to the robot.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def startSendingMoveCommands(self):
+    &#34;&#34;&#34;
+    Starts periodically sending the &#34;move&#34; command to the robot.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.commandWorker = CommandSenderWorker(self)
+    self.commandWorker.daemon = True
+    self.commandWorker.start()</code></pre>
+</details>
+</dd>
+<dt id="core.Emir.stop"><code class="name flex">
 <span>def <span class="ident">stop</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2250,7 +2546,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;stop&#39;)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.stopReceivingRobotStatus"><code class="name flex">
+<dt id="core.Emir.stopReceivingRobotStatus"><code class="name flex">
 <span>def <span class="ident">stopReceivingRobotStatus</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2270,11 +2566,33 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.sendInfoOff()
     time.sleep(0.2)
 
-    self.statusWorker.stop()
+    self.statusWorker.stopit()
     self.statusWorker.join()</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.translate"><code class="name flex">
+<dt id="core.Emir.stopSendingMoveCommands"><code class="name flex">
+<span>def <span class="ident">stopSendingMoveCommands</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Stops sending the "move" command periodically to the robot.</p>
+<h2 id="returns">Returns</h2>
+<p>N/A</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def stopSendingMoveCommands(self):
+    &#34;&#34;&#34;
+    Stops sending the &#34;move&#34; command periodically to the robot.
+
+    Returns:
+        N/A
+    &#34;&#34;&#34;
+
+    self.commandWorker.stopit()
+    self.commandWorker.join()
+    time.sleep(0.1)</code></pre>
+</details>
+</dd>
+<dt id="core.Emir.translate"><code class="name flex">
 <span>def <span class="ident">translate</span></span>(<span>self, path, speed)</span>
 </code></dt>
 <dd>
@@ -2308,7 +2626,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     self.__sendCommand(&#39;translate&#39;, path, speed, firstArgLimits, secondArgLimits)</code></pre>
 </details>
 </dd>
-<dt id="emir.Emir.turnOff"><code class="name flex">
+<dt id="core.Emir.turnOff"><code class="name flex">
 <span>def <span class="ident">turnOff</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2331,7 +2649,7 @@ CS     - checksum (aa+bb+..+ss+CS=0)
 </dd>
 </dl>
 </dd>
-<dt id="emir.StatusMessageWorker"><code class="flex name class">
+<dt id="core.StatusMessageWorker"><code class="flex name class">
 <span>class <span class="ident">StatusMessageWorker</span></span>
 <span>(</span><span><small>ancestors:</small> threading.Thread)</span>
 </code></dt>
@@ -2359,7 +2677,7 @@ Deals with receiving and parsing of robot status message and updating internal r
         self.printMessages = printMessages
         self.stop = threading.Event()
 
-    def stop(self):
+    def stopit(self):
         &#34;&#34;&#34;
         Signals an event which the main thread is waiting for.
         Used to stop the status message worker thread.
@@ -2400,7 +2718,7 @@ Deals with receiving and parsing of robot status message and updating internal r
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="emir.StatusMessageWorker.__init__"><code class="name flex">
+<dt id="core.StatusMessageWorker.__init__"><code class="name flex">
 <span>def <span class="ident">__init__</span></span>(<span>self, robot, printMessages)</span>
 </code></dt>
 <dd>
@@ -2428,7 +2746,7 @@ Deals with receiving and parsing of robot status message and updating internal r
     self.stop = threading.Event()</code></pre>
 </details>
 </dd>
-<dt id="emir.StatusMessageWorker.run"><code class="name flex">
+<dt id="core.StatusMessageWorker.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2459,8 +2777,8 @@ Charged with receiving and parsing of the robot status message and updating robo
             print(&#34;Error occurred when getting robot status message!&#34;)</code></pre>
 </details>
 </dd>
-<dt id="emir.StatusMessageWorker.stop"><code class="name flex">
-<span>def <span class="ident">stop</span></span>(<span>self)</span>
+<dt id="core.StatusMessageWorker.stopit"><code class="name flex">
+<span>def <span class="ident">stopit</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Signals an event which the main thread is waiting for.
@@ -2469,7 +2787,7 @@ Used to stop the status message worker thread.</p>
 <p>N/A</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def stop(self):
+<pre><code class="python">def stopit(self):
     &#34;&#34;&#34;
     Signals an event which the main thread is waiting for.
     Used to stop the status message worker thread.
@@ -2480,7 +2798,7 @@ Used to stop the status message worker thread.</p>
     self.stop.set()</code></pre>
 </details>
 </dd>
-<dt id="emir.StatusMessageWorker.stopped"><code class="name flex">
+<dt id="core.StatusMessageWorker.stopped"><code class="name flex">
 <span>def <span class="ident">stopped</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -2513,44 +2831,55 @@ Used to stop the status message worker thread.</p>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="emir.Emir" href="#emir.Emir">Emir</a></code></h4>
+<h4><code><a title="core.CommandSenderWorker" href="#core.CommandSenderWorker">CommandSenderWorker</a></code></h4>
 <ul class="">
-<li><code><a title="emir.Emir.__init__" href="#emir.Emir.__init__">__init__</a></code></li>
-<li><code><a title="emir.Emir.beep" href="#emir.Emir.beep">beep</a></code></li>
-<li><code><a title="emir.Emir.clipValue" href="#emir.Emir.clipValue">clipValue</a></code></li>
-<li><code><a title="emir.Emir.connect" href="#emir.Emir.connect">connect</a></code></li>
-<li><code><a title="emir.Emir.getMax8bitIntegerValue" href="#emir.Emir.getMax8bitIntegerValue">getMax8bitIntegerValue</a></code></li>
-<li><code><a title="emir.Emir.getRobotStatus" href="#emir.Emir.getRobotStatus">getRobotStatus</a></code></li>
-<li><code><a title="emir.Emir.getTwosComplement8bit" href="#emir.Emir.getTwosComplement8bit">getTwosComplement8bit</a></code></li>
-<li><code><a title="emir.Emir.move" href="#emir.Emir.move">move</a></code></li>
-<li><code><a title="emir.Emir.printStatusMessageValues" href="#emir.Emir.printStatusMessageValues">printStatusMessageValues</a></code></li>
-<li><code><a title="emir.Emir.resetAzimuth" href="#emir.Emir.resetAzimuth">resetAzimuth</a></code></li>
-<li><code><a title="emir.Emir.resetCounters" href="#emir.Emir.resetCounters">resetCounters</a></code></li>
-<li><code><a title="emir.Emir.rotate" href="#emir.Emir.rotate">rotate</a></code></li>
-<li><code><a title="emir.Emir.sendInfoEEPROM" href="#emir.Emir.sendInfoEEPROM">sendInfoEEPROM</a></code></li>
-<li><code><a title="emir.Emir.sendInfoOff" href="#emir.Emir.sendInfoOff">sendInfoOff</a></code></li>
-<li><code><a title="emir.Emir.sendInfoOn" href="#emir.Emir.sendInfoOn">sendInfoOn</a></code></li>
-<li><code><a title="emir.Emir.sensorsOff" href="#emir.Emir.sensorsOff">sensorsOff</a></code></li>
-<li><code><a title="emir.Emir.sensorsOn" href="#emir.Emir.sensorsOn">sensorsOn</a></code></li>
-<li><code><a title="emir.Emir.setDigitalOutput" href="#emir.Emir.setDigitalOutput">setDigitalOutput</a></code></li>
-<li><code><a title="emir.Emir.setMaxRotation" href="#emir.Emir.setMaxRotation">setMaxRotation</a></code></li>
-<li><code><a title="emir.Emir.setMaxSpeed" href="#emir.Emir.setMaxSpeed">setMaxSpeed</a></code></li>
-<li><code><a title="emir.Emir.setMinDistance" href="#emir.Emir.setMinDistance">setMinDistance</a></code></li>
-<li><code><a title="emir.Emir.startReceivingRobotStatus" href="#emir.Emir.startReceivingRobotStatus">startReceivingRobotStatus</a></code></li>
-<li><code><a title="emir.Emir.stop" href="#emir.Emir.stop">stop</a></code></li>
-<li><code><a title="emir.Emir.stopReceivingRobotStatus" href="#emir.Emir.stopReceivingRobotStatus">stopReceivingRobotStatus</a></code></li>
-<li><code><a title="emir.Emir.stringOfHexToListOfDecIntegers" href="#emir.Emir.stringOfHexToListOfDecIntegers">stringOfHexToListOfDecIntegers</a></code></li>
-<li><code><a title="emir.Emir.translate" href="#emir.Emir.translate">translate</a></code></li>
-<li><code><a title="emir.Emir.turnOff" href="#emir.Emir.turnOff">turnOff</a></code></li>
+<li><code><a title="core.CommandSenderWorker.__init__" href="#core.CommandSenderWorker.__init__">__init__</a></code></li>
+<li><code><a title="core.CommandSenderWorker.run" href="#core.CommandSenderWorker.run">run</a></code></li>
+<li><code><a title="core.CommandSenderWorker.stopit" href="#core.CommandSenderWorker.stopit">stopit</a></code></li>
+<li><code><a title="core.CommandSenderWorker.stopped" href="#core.CommandSenderWorker.stopped">stopped</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="emir.StatusMessageWorker" href="#emir.StatusMessageWorker">StatusMessageWorker</a></code></h4>
+<h4><code><a title="core.Emir" href="#core.Emir">Emir</a></code></h4>
 <ul class="">
-<li><code><a title="emir.StatusMessageWorker.__init__" href="#emir.StatusMessageWorker.__init__">__init__</a></code></li>
-<li><code><a title="emir.StatusMessageWorker.run" href="#emir.StatusMessageWorker.run">run</a></code></li>
-<li><code><a title="emir.StatusMessageWorker.stop" href="#emir.StatusMessageWorker.stop">stop</a></code></li>
-<li><code><a title="emir.StatusMessageWorker.stopped" href="#emir.StatusMessageWorker.stopped">stopped</a></code></li>
+<li><code><a title="core.Emir.__init__" href="#core.Emir.__init__">__init__</a></code></li>
+<li><code><a title="core.Emir.beep" href="#core.Emir.beep">beep</a></code></li>
+<li><code><a title="core.Emir.clipValue" href="#core.Emir.clipValue">clipValue</a></code></li>
+<li><code><a title="core.Emir.connect" href="#core.Emir.connect">connect</a></code></li>
+<li><code><a title="core.Emir.getMax8bitIntegerValue" href="#core.Emir.getMax8bitIntegerValue">getMax8bitIntegerValue</a></code></li>
+<li><code><a title="core.Emir.getRobotStatus" href="#core.Emir.getRobotStatus">getRobotStatus</a></code></li>
+<li><code><a title="core.Emir.getTwosComplement8bit" href="#core.Emir.getTwosComplement8bit">getTwosComplement8bit</a></code></li>
+<li><code><a title="core.Emir.move" href="#core.Emir.move">move</a></code></li>
+<li><code><a title="core.Emir.printStatusMessageValues" href="#core.Emir.printStatusMessageValues">printStatusMessageValues</a></code></li>
+<li><code><a title="core.Emir.resetAzimuth" href="#core.Emir.resetAzimuth">resetAzimuth</a></code></li>
+<li><code><a title="core.Emir.resetCounters" href="#core.Emir.resetCounters">resetCounters</a></code></li>
+<li><code><a title="core.Emir.rotate" href="#core.Emir.rotate">rotate</a></code></li>
+<li><code><a title="core.Emir.sendInfoEEPROM" href="#core.Emir.sendInfoEEPROM">sendInfoEEPROM</a></code></li>
+<li><code><a title="core.Emir.sendInfoOff" href="#core.Emir.sendInfoOff">sendInfoOff</a></code></li>
+<li><code><a title="core.Emir.sendInfoOn" href="#core.Emir.sendInfoOn">sendInfoOn</a></code></li>
+<li><code><a title="core.Emir.sensorsOff" href="#core.Emir.sensorsOff">sensorsOff</a></code></li>
+<li><code><a title="core.Emir.sensorsOn" href="#core.Emir.sensorsOn">sensorsOn</a></code></li>
+<li><code><a title="core.Emir.setDigitalOutput" href="#core.Emir.setDigitalOutput">setDigitalOutput</a></code></li>
+<li><code><a title="core.Emir.setMaxRotation" href="#core.Emir.setMaxRotation">setMaxRotation</a></code></li>
+<li><code><a title="core.Emir.setMaxSpeed" href="#core.Emir.setMaxSpeed">setMaxSpeed</a></code></li>
+<li><code><a title="core.Emir.setMinDistance" href="#core.Emir.setMinDistance">setMinDistance</a></code></li>
+<li><code><a title="core.Emir.startReceivingRobotStatus" href="#core.Emir.startReceivingRobotStatus">startReceivingRobotStatus</a></code></li>
+<li><code><a title="core.Emir.startSendingMoveCommands" href="#core.Emir.startSendingMoveCommands">startSendingMoveCommands</a></code></li>
+<li><code><a title="core.Emir.stop" href="#core.Emir.stop">stop</a></code></li>
+<li><code><a title="core.Emir.stopReceivingRobotStatus" href="#core.Emir.stopReceivingRobotStatus">stopReceivingRobotStatus</a></code></li>
+<li><code><a title="core.Emir.stopSendingMoveCommands" href="#core.Emir.stopSendingMoveCommands">stopSendingMoveCommands</a></code></li>
+<li><code><a title="core.Emir.stringOfHexToListOfDecIntegers" href="#core.Emir.stringOfHexToListOfDecIntegers">stringOfHexToListOfDecIntegers</a></code></li>
+<li><code><a title="core.Emir.translate" href="#core.Emir.translate">translate</a></code></li>
+<li><code><a title="core.Emir.turnOff" href="#core.Emir.turnOff">turnOff</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="core.StatusMessageWorker" href="#core.StatusMessageWorker">StatusMessageWorker</a></code></h4>
+<ul class="">
+<li><code><a title="core.StatusMessageWorker.__init__" href="#core.StatusMessageWorker.__init__">__init__</a></code></li>
+<li><code><a title="core.StatusMessageWorker.run" href="#core.StatusMessageWorker.run">run</a></code></li>
+<li><code><a title="core.StatusMessageWorker.stopit" href="#core.StatusMessageWorker.stopit">stopit</a></code></li>
+<li><code><a title="core.StatusMessageWorker.stopped" href="#core.StatusMessageWorker.stopped">stopped</a></code></li>
 </ul>
 </li>
 </ul>
