@@ -3,9 +3,9 @@ import time
 import math
 
 def main():
-    delay = 0.5
+    delay = 0.2
 
-    red = emir.Emir("eMIR-Red")
+    red = emir.Emir("eMIR-Yellow")
     red.connect()
     red.startReceivingRobotStatus(False)
 
@@ -21,46 +21,19 @@ def main():
     red.setSpeed = 20
     red.setRotation = 0
 
-    # k_P_distance = 0.5
-    # k_D_distance = 0.2
-    # k_P_parallel = 0.1
-    # k_D_parallel = 0.05
+    k_P_parallelism = 1
+    k_D_distance = 4
 
-    k_P = 0.5
-    k_D = 0.1
-
-    wantedDistanceFromWall = 20
-    # oldDistanceError = 0
-    # oldParallelError = 0
-    oldTime = 0
+    wantedDistanceFromWall = 25
 
     while red.proximitySensors[0] > 15:
-        print(red.proximitySensors[4])
-        # distanceErrorSen4 = wantedDistanceFromWall - red.proximitySensors[4]
-        # distanceErrorSen2 = wantedDistanceFromWall - red.proximitySensors[2]
-        # # distanceError = min(distanceErrorSen2, distanceErrorSen4)
-        # distanceError = distanceErrorSen4
-        # parallelError = red.proximitySensors[2] - (9**2 + (red.proximitySensors[4] + 3.8)**2)**0.5
-
-        # newTime = time.time()
-        # timeStep = newTime - oldTime
-        # print(timeStep)
-        #
-        # distanceError_d = int((distanceError - oldDistanceError) / timeStep)
-        # parallelError_d = int((parallelError - oldParallelError) / timeStep)
-        #
-        # red.setRotation = int(k_P_distance * distanceError + k_D_distance * distanceError_d + k_P_parallel * parallelError + k_D_parallel * parallelError_d)
-
-        # oldDistanceError = distanceError
-        # oldParallelError = parallelError
-        # oldTime = newTime
-
-        red.setRotation = -k_D * (wantedDistanceFromWall - red.proximitySensors[4]) +\
-                          k_P * ((red.proximitySensors[2] * math.cos(math.radians(56) - 4.5)) - red.proximitySensors[4])
-        # time.sleep(0.01)
+        red.setRotation = int(k_D_distance * (wantedDistanceFromWall - red.proximitySensors[4]) -\
+                          k_P_parallelism * ((red.proximitySensors[2] * math.cos(math.radians(56) + 4.39)) - red.proximitySensors[4]))
 
     red.setSpeed = 0
     red.setRotation = 0
+
+    time.sleep(0.2)
 
     red.stopReceivingRobotStatus()
     red.stopSendingMoveCommands()
@@ -70,7 +43,7 @@ def main():
 
     red.stop()
     time.sleep(delay)
-    # red.turnOff()
+    red.turnOff()
 
 def sign(number):
     return number and (1, -1)[number < 0]

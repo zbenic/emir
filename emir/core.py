@@ -409,11 +409,11 @@ class Emir:
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")  # For debugging purposes
+            warnings.warn("Problem occurred while getting robot status message which resulted in an empty status message.")
             self.update = False
         else:
             self.__parseStatusMessage()
-            print(str(time.time()) + "-update")
+            # print(str(time.time()) + "-update " + str(self.proximitySensors[0]))  # For debugging purposes
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
@@ -832,6 +832,6 @@ class CommandSenderWorker(threading.Thread):
                 translationSpeed = self.robot.setSpeed
                 rotationSpeed = self.robot.setRotation
                 self.robot.move(translationSpeed, rotationSpeed)
-                time.sleep(0.2)  # Command send rate is ~5 Hz
+                time.sleep(0.18)  # Command send rate is ~5 Hz
             except:
                 print("Error occurred when sending the command!")
