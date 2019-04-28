@@ -32,7 +32,6 @@ def main():
 
     red.setSpeed = 0
     red.setRotation = 0
-
     time.sleep(0.2)
 
     red.stopReceivingRobotStatus()
