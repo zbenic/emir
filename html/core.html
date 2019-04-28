@@ -126,11 +126,11 @@ class Emir:
         &#34;&#34;&#34;
 
         if self.name == &#34;eMIR-Yellow&#34;:
-            self.port = 1  # TODO: documentation says port num is 27
+            self.port = 1  # documentation says port num is 27
         elif self.name == &#34;eMIR-Blue&#34;:
-            self.port = 1  # TODO: documentation says port num is 34
+            self.port = 1  # documentation says port num is 34
         elif self.name == &#34;eMIR-Red&#34;:
-            self.port = 1  # TODO: documentation says port num is 50
+            self.port = 1  # documentation says port num is 50
         else:
             self.port = None
 
@@ -371,7 +371,7 @@ class Emir:
         self.digitalIn = int(statusMessage[25:27], 16)
 
         # read azimuth [deg]
-        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+        self.azimuth = int(statusMessage[27:29], 16) * 2
 
         # read path [cm]
         messagePathValueInt = int(statusMessage[29:31], 16)
@@ -427,17 +427,17 @@ class Emir:
         Returns:
             N/A
         &#34;&#34;&#34;
-        self.statusMessage = None  # TODO: comment this and the next line when testing offline
-        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        self.statusMessage = None
+        self.statusMessage = self.sock.recv(128)
         messageStart = self.statusMessage.find(b&#39;*&#39;)
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)
             self.update = False
         else:
             self.__parseStatusMessage()
-            print(str(time.time()) + &#34;-update&#34;)
+            # print(str(time.time()) + &#34;-update &#34; + str(self.proximitySensors[0]))  # For debugging purposes
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
@@ -856,7 +856,7 @@ class CommandSenderWorker(threading.Thread):
                 translationSpeed = self.robot.setSpeed
                 rotationSpeed = self.robot.setRotation
                 self.robot.move(translationSpeed, rotationSpeed)
-                time.sleep(0.2)  # Command send rate is ~5 Hz
+                time.sleep(0.18)  # Command send rate is ~5 Hz
             except:
                 print(&#34;Error occurred when sending the command!&#34;)</code></pre>
 </details>
@@ -931,7 +931,7 @@ Deals with sending the "move" command periodically to the robot.</p></section>
                 translationSpeed = self.robot.setSpeed
                 rotationSpeed = self.robot.setRotation
                 self.robot.move(translationSpeed, rotationSpeed)
-                time.sleep(0.2)  # Command send rate is ~5 Hz
+                time.sleep(0.18)  # Command send rate is ~5 Hz
             except:
                 print(&#34;Error occurred when sending the command!&#34;)</code></pre>
 </details>
@@ -987,7 +987,7 @@ Charged with sending the "move" command periodically to the robot.</p>
             translationSpeed = self.robot.setSpeed
             rotationSpeed = self.robot.setRotation
             self.robot.move(translationSpeed, rotationSpeed)
-            time.sleep(0.2)  # Command send rate is ~5 Hz
+            time.sleep(0.18)  # Command send rate is ~5 Hz
         except:
             print(&#34;Error occurred when sending the command!&#34;)</code></pre>
 </details>
@@ -1137,11 +1137,11 @@ Implementation of parsing of the return status message can also be used.</p></se
         &#34;&#34;&#34;
 
         if self.name == &#34;eMIR-Yellow&#34;:
-            self.port = 1  # TODO: documentation says port num is 27
+            self.port = 1  # documentation says port num is 27
         elif self.name == &#34;eMIR-Blue&#34;:
-            self.port = 1  # TODO: documentation says port num is 34
+            self.port = 1  # documentation says port num is 34
         elif self.name == &#34;eMIR-Red&#34;:
-            self.port = 1  # TODO: documentation says port num is 50
+            self.port = 1  # documentation says port num is 50
         else:
             self.port = None
 
@@ -1382,7 +1382,7 @@ Implementation of parsing of the return status message can also be used.</p></se
         self.digitalIn = int(statusMessage[25:27], 16)
 
         # read azimuth [deg]
-        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+        self.azimuth = int(statusMessage[27:29], 16) * 2
 
         # read path [cm]
         messagePathValueInt = int(statusMessage[29:31], 16)
@@ -1438,17 +1438,17 @@ Implementation of parsing of the return status message can also be used.</p></se
         Returns:
             N/A
         &#34;&#34;&#34;
-        self.statusMessage = None  # TODO: comment this and the next line when testing offline
-        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        self.statusMessage = None
+        self.statusMessage = self.sock.recv(128)
         messageStart = self.statusMessage.find(b&#39;*&#39;)
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
         if not self.statusMessage:
-            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+            warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)
             self.update = False
         else:
             self.__parseStatusMessage()
-            print(str(time.time()) + &#34;-update&#34;)
+            # print(str(time.time()) + &#34;-update &#34; + str(self.proximitySensors[0]))  # For debugging purposes
             self.update = True
 
     def startReceivingRobotStatus(self, printMessages: bool = False):
@@ -2086,17 +2086,17 @@ CS     - checksum (aa+bb+..+ss+CS=0)
     Returns:
         N/A
     &#34;&#34;&#34;
-    self.statusMessage = None  # TODO: comment this and the next line when testing offline
-    self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+    self.statusMessage = None
+    self.statusMessage = self.sock.recv(128)
     messageStart = self.statusMessage.find(b&#39;*&#39;)
     messageEnd = messageStart + self.statusMessage[messageStart:].find(b&#39;/&#39;) + 1
     self.statusMessage = self.statusMessage[messageStart:messageEnd]
     if not self.statusMessage:
-        warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)  # For debugging purposes
+        warnings.warn(&#34;Problem occurred while getting robot status message which resulted in an empty status message.&#34;)
         self.update = False
     else:
         self.__parseStatusMessage()
-        print(str(time.time()) + &#34;-update&#34;)
+        # print(str(time.time()) + &#34;-update &#34; + str(self.proximitySensors[0]))  # For debugging purposes
         self.update = True</code></pre>
 </details>
 </dd>
