@@ -102,11 +102,11 @@ class Emir:
         """
 
         if self.name == "eMIR-Yellow":
-            self.port = 1  # TODO: documentation says port num is 27
+            self.port = 1  # documentation says port num is 27
         elif self.name == "eMIR-Blue":
-            self.port = 1  # TODO: documentation says port num is 34
+            self.port = 1  # documentation says port num is 34
         elif self.name == "eMIR-Red":
-            self.port = 1  # TODO: documentation says port num is 50
+            self.port = 1  # documentation says port num is 50
         else:
             self.port = None
 
@@ -347,7 +347,7 @@ class Emir:
         self.digitalIn = int(statusMessage[25:27], 16)
 
         # read azimuth [deg]
-        self.azimuth = int(statusMessage[27:29], 16) * 2  # TODO: check if multiplication with factor 2 is correct
+        self.azimuth = int(statusMessage[27:29], 16) * 2
 
         # read path [cm]
         messagePathValueInt = int(statusMessage[29:31], 16)
@@ -403,8 +403,8 @@ class Emir:
         Returns:
             N/A
         """
-        self.statusMessage = None  # TODO: comment this and the next line when testing offline
-        self.statusMessage = self.sock.recv(128)  # TODO: check if 64bytes is enough
+        self.statusMessage = None
+        self.statusMessage = self.sock.recv(128)
         messageStart = self.statusMessage.find(b'*')
         messageEnd = messageStart + self.statusMessage[messageStart:].find(b'/') + 1
         self.statusMessage = self.statusMessage[messageStart:messageEnd]
